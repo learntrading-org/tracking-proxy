@@ -1,48 +1,32 @@
-// app/api/newsletter/subscribe/route.js
+// app/api/convertkit/tag/route.js
 
 import { NextResponse } from "next/server";
 
 // Handle CORS preflight requests
 export async function OPTIONS(request) {
-  const headers = new Headers();
-  headers.set("Access-Control-Allow-Origin", "*");
-  headers.set(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  headers.set(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
-  headers.set("Access-Control-Max-Age", "86400");
-
-  return new Response(null, {
+  return new NextResponse(null, {
     status: 200,
-    headers: headers,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": "86400",
+    },
   });
 }
 
 export async function POST(request) {
-  // Set CORS headers for the main response
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization, X-Requested-With",
-  };
-
   try {
     const { email, tagId } = await request.json();
 
     // Validate required fields
     if (!email || !tagId) {
-      return new Response(
-        JSON.stringify({ error: "Email and tagId are required" }),
+      return NextResponse.json(
+        { error: "Email and tagId are required" },
         {
           status: 400,
           headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
+            "Access-Control-Allow-Origin": "*",
           },
         }
       );
@@ -51,26 +35,27 @@ export async function POST(request) {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return new Response(JSON.stringify({ error: "Invalid email format" }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      });
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        {
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
     }
 
     // Get ConvertKit API secret from environment variables
     const apiSecret = process.env.CONVERTKIT_API_SECRET;
     if (!apiSecret) {
       console.error("CONVERTKIT_API_SECRET environment variable is not set");
-      return new Response(
-        JSON.stringify({ error: "API configuration error" }),
+      return NextResponse.json(
+        { error: "API configuration error" },
         {
           status: 500,
           headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
+            "Access-Control-Allow-Origin": "*",
           },
         }
       );
@@ -95,43 +80,43 @@ export async function POST(request) {
 
     if (!convertkitResponse.ok) {
       console.error("ConvertKit API error:", responseData);
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           error: "Failed to add tag to user",
           details: responseData.message || "Unknown error",
-        }),
+        },
         {
           status: convertkitResponse.status,
           headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
+            "Access-Control-Allow-Origin": "*",
           },
         }
       );
     }
 
     // Return successful response
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         success: true,
         subscription: responseData.subscription,
-      }),
+      },
       {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
+          "Access-Control-Allow-Origin": "*",
         },
       }
     );
   } catch (error) {
     console.error("Route handler error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
   }
 }
