@@ -1,4 +1,4 @@
-// app/api/hubspot/webhook/route.js
+// app/api/hubspot/crypto-renewal-email/route.js
 import { NextResponse } from "next/server";
 
 // Handle CORS preflight requests
