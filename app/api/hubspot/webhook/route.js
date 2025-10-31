@@ -19,14 +19,27 @@ export async function POST(request) {
   try {
     const payload = await request.json();
 
-    // Log the entire webhook payload
-    console.log("Webhook received:", JSON.stringify(payload, null, 2));
+    // Extract the specific data fields
+    const { inputs, associatedObjects } = payload;
+    const contact = associatedObjects?.[0];
+    const email = contact?.properties?.email;
+    const contactId = contact?.objectId;
+    const customId = inputs?.dataObjectId;
 
-    // Return success response
+    // Log the extracted data
+    console.log("Extracted webhook data:", {
+      email,
+      contactId,
+      customId,
+      inputs,
+      contact,
+    });
+
+    // Return success response with the requested format
     return NextResponse.json(
       {
-        success: true,
-        message: "Webhook received and logged.",
+        status: "success",
+        statusCode: 200,
       },
       {
         status: 200,
