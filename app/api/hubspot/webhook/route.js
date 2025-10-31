@@ -20,6 +20,7 @@ export async function POST(request) {
     const payload = await request.json();
 
     // Extract the specific data fields
+    console.log({ payload });
     const { inputs, associatedObjects } = payload;
     const contact = associatedObjects?.[0];
     const email = contact?.properties?.email;
