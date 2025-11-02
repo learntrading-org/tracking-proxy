@@ -17,10 +17,67 @@ export async function OPTIONS(request) {
 // Handle the main webhook POST request
 export async function POST(request) {
   try {
-    const payload = await request.json();
+    const data = await request.json();
+    const { fields } = data;
+    const { firstName, price, billing, email } = fields;
 
-    // Extract the specific data fields
-    console.log({ payload });
+    console.log({ data });
+
+    const tagId = "12168728"; // Trigger Crypto Renewal Email
+    const apiSecret = process.env.CONVERTKIT_API_SECRET;
+
+    if (!apiSecret) {
+      throw new Error("ConvertKit API secret is not set");
+    }
+
+    // Step 1: Remove the tag if it exists (unsubscribe from tag)
+    const unsubscribeResponse = await fetch(
+      `https://api.convertkit.com/v3/tags/${tagId}/unsubscribe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          api_secret: apiSecret,
+          email,
+        }),
+      }
+    );
+
+    if (!unsubscribeResponse.ok) {
+      console.error(
+        "Failed to unsubscribe from tag:",
+        await unsubscribeResponse.text()
+      );
+    }
+
+    // Step 2: Update metadata and add the tag (subscribe to tag, which also updates fields)
+    const subscribeResponse = await fetch(
+      `https://api.convertkit.com/v3/tags/${tagId}/subscribe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          api_secret: apiSecret,
+          email,
+          first_name: firstName,
+          fields: {
+            renewal_price: price,
+            billing: billing,
+          },
+        }),
+      }
+    );
+
+    if (!subscribeResponse.ok) {
+      throw new Error(
+        "Failed to subscribe to tag and update fields: " +
+          (await subscribeResponse.text())
+      );
+    }
 
     // Return success response with the requested format
     return NextResponse.json(
