@@ -21,8 +21,6 @@ export async function POST(request) {
     const { fields } = data;
     const { firstName, price, billing, email } = fields;
 
-    console.log({ data });
-
     const tagId = "12168728"; // Trigger Crypto Renewal Email
     const apiSecret = process.env.CONVERTKIT_API_SECRET;
 
