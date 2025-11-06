@@ -25,7 +25,7 @@ export async function POST(request) {
     if (isNaN(amt) || isNaN(v)) {
       throw new Error("Invalid amount or VAT values");
     }
-    const vat_free_price = amt - amt * v;
+    const vat_free_price = amt - (amt * v) / (100 + v);
     // Return success response with the requested format
     return NextResponse.json(
       {
