@@ -22,7 +22,7 @@ export async function OPTIONS(request) {
 export async function POST(request) {
   try {
     const { email, tagId } = await request.json();
-
+    console.log({ email, tagId });
     // Validate required fields
     if (!email || !tagId) {
       return NextResponse.json(
