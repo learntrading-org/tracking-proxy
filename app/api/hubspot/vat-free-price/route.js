@@ -29,7 +29,9 @@ export async function POST(request) {
     // Return success response with the requested format
     return NextResponse.json(
       {
-        vat_free_price: vat_free_price,
+        outputFields: {
+          vat_free_price: vat_free_price,
+        },
       },
       {
         status: 200,
