@@ -21,11 +21,10 @@ export async function POST(request) {
     const { amount, vat } = fields;
 
     const amt = parseFloat(amount);
-    const v = parseFloat(vat);
     if (isNaN(amt) || isNaN(v)) {
       throw new Error("Invalid amount or VAT values");
     }
-    const vat_free_price = Number((amt - (amt * v) / 100).toFixed(2));
+    const vat_free_price = Number((amount / (1 + vat / 100)).toFixed(2));
     // Return success response with the requested format
     return NextResponse.json(
       {
