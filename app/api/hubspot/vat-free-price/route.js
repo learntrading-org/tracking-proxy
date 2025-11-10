@@ -21,7 +21,7 @@ export async function POST(request) {
     const { amount, vat } = fields;
 
     const amt = parseFloat(amount);
-    if (isNaN(amt) || isNaN(v)) {
+    if (isNaN(amt) || isNaN(vat)) {
       throw new Error("Invalid amount or VAT values");
     }
     const vat_free_price = Number((amount / (1 + vat / 100)).toFixed(2));
