@@ -56,7 +56,7 @@ export async function POST(request) {
       },
     };
 
-    const response = await fetch("https://api.docuseal.com/submissions", {
+    const response = await fetch("https://api.docuseal.eu/submissions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
