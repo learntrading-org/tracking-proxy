@@ -47,12 +47,12 @@ export async function POST(request) {
     }
 
     const requestBody = {
-      template_id: "2063612",
+      template_id: "301737",
       submitters: [submitter],
       send_email: true,
       message: {
         subject: 'eSignature request for "BULLMANIA PLATINUM AGREEMENT"',
-        body: "Hi there, \n\nBullmania has requested your eSignature on a document. \n\nPlease click on the below link to view and sign the document.\n{{submitter.link}} \n\nIf you have any questions please email hello@bullmania.com.\n\nThank you",
+        body: "Hi there, \n\nWelcome to Bullmania, and thank you for joining us! \n\nYour agreement has been sent for your eSignature. Please click the link below to review and sign the document:\n{{submitter.link}} \n\nIf your subscription includes 1-on-1 coaching, our team will reach out shortly to schedule your first session.\n\nIf you have any questions, feel free to contact us at hello@bullmania.com.\n\nThank you and welcome aboard,\nThe Bullmania Team",
       },
     };
 
