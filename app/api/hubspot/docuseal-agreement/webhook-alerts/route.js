@@ -20,11 +20,28 @@ export async function POST(request) {
     const payload = await request.json();
 
     // Extract the specific data fields
+    console.log({ payload });
 
     const eventType = payload.event_type;
     const data = payload.data;
-    const email = data.email || "N/A";
     const timestamp = payload.timestamp;
+
+    // Extract email from possible places
+    let email = data.email || "N/A";
+    if (
+      email === "N/A" &&
+      data.submitters &&
+      data.submitters.length > 0 &&
+      data.submitters[0].email
+    ) {
+      email = data.submitters[0].email;
+    } else if (
+      email === "N/A" &&
+      data.created_by_user &&
+      data.created_by_user.email
+    ) {
+      email = data.created_by_user.email + " (creator)";
+    }
 
     // Map event types to human-readable status messages
     const eventMap = {
@@ -56,7 +73,18 @@ export async function POST(request) {
 
     // Additional details if available
     const templateName = data.template ? data.template.name : "N/A";
-    const submissionUrl = data.submission ? data.submission.url : "N/A";
+
+    // Extract submission URL from possible places
+    let submissionUrl = "N/A";
+    if (data.submission_url) {
+      submissionUrl = data.submission_url;
+    } else if (data.submission && data.submission.url) {
+      submissionUrl = data.submission.url;
+    } else if (data.slug) {
+      submissionUrl = `https://docuseal.com/e/${data.slug}`;
+    } else if (data.url) {
+      submissionUrl = data.url;
+    }
 
     // Construct Slack payload
     const slackPayload = {
