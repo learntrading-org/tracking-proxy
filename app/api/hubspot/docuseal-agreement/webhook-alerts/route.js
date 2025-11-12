@@ -20,7 +20,6 @@ export async function POST(request) {
     const payload = await request.json();
 
     // Extract the specific data fields
-    console.log({ payload });
 
     const eventType = payload.event_type;
     const data = payload.data;
