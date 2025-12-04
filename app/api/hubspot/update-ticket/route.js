@@ -1,7 +1,6 @@
 // app/api/hubspot/update-ticket/route.js
 import { NextResponse } from "next/server";
 
-// Handle CORS preflight requests
 export async function OPTIONS(request) {
   return new NextResponse(null, {
     status: 200,
@@ -14,61 +13,42 @@ export async function OPTIONS(request) {
   });
 }
 
-// Handle the main webhook POST request
 export async function POST(request) {
   try {
     const payload = await request.json();
 
-    // 1. Extract inputs and context
+    // 1. Get the Enrolled Contact and Inputs
     const { object, inputFields } = payload;
-    const { objectId, objectType } = object;
-    const { target_pipeline_id, new_stage_id, ticket_name_filter } = inputFields;
+    const contactId = object.objectId; // The ID of the user (Contact) enrolled in the workflow
+    const { target_pipeline_id, new_stage_id } = inputFields;
 
-    if (!objectId || !target_pipeline_id || !new_stage_id) {
-      throw new Error("Missing required fields: objectId, target_pipeline_id, or new_stage_id");
+    console.log(`Processing for Contact ID: ${contactId}, Pipeline: ${target_pipeline_id}, Target Stage: ${new_stage_id}`);
+
+    if (!contactId || !target_pipeline_id || !new_stage_id) {
+      throw new Error("Missing required fields");
     }
 
     const token = process.env.HUBSPOT_ACCESS_TOKEN;
-    if (!token) {
-      console.error("Missing HUBSPOT_ACCESS_TOKEN environment variable");
-      throw new Error("Configuration error");
-    }
+    if (!token) throw new Error("Missing HUBSPOT_ACCESS_TOKEN");
 
-    // 2. Fetch associated tickets
-    // We need to know the association type ID. 
-    // For Contact -> Ticket, it's usually 15 (Contact to Ticket) or 16 (Ticket to Contact).
-    // But it's safer to query associations generically or assume standard definition.
-    // Let's use the V4 associations API or V3 for simplicity.
-    // V3: GET /crm/v3/objects/{objectType}/{objectId}/associations/{toObjectType}
-
-    // Determine the 'from' object type for the URL (e.g. 'contacts')
-    const fromType = objectType.toLowerCase() + 's'; // e.g. 'contacts'
-
-    const assocUrl = `https://api.hubapi.com/crm/v3/objects/${fromType}/${objectId}/associations/tickets`;
+    // 2. Find Tickets associated with this Contact
+    // We use the Contact ID to find associations. This is more reliable than email.
+    const assocUrl = `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/tickets`;
     const assocResponse = await fetch(assocUrl, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if (!assocResponse.ok) {
-      const errorText = await assocResponse.text();
-      console.error(`Error fetching associations: ${assocResponse.status} ${errorText}`);
-      throw new Error(`Failed to fetch associated tickets`);
-    }
+    if (!assocResponse.ok) throw new Error(`Failed to fetch associations: ${assocResponse.status}`);
 
     const assocData = await assocResponse.json();
     const ticketIds = assocData.results.map(r => r.id);
 
     if (ticketIds.length === 0) {
-      return NextResponse.json({
-        message: "No associated tickets found"
-      });
+      console.log("No tickets associated with this contact.");
+      return NextResponse.json({ message: "No associated tickets found" });
     }
 
-    // 3. Fetch details for these tickets (pipeline, stage, subject)
-    // POST /crm/v3/objects/tickets/batch/read
+    // 3. Check which of these tickets are in the correct Pipeline
     const batchReadUrl = `https://api.hubapi.com/crm/v3/objects/tickets/batch/read`;
     const batchReadResponse = await fetch(batchReadUrl, {
       method: 'POST',
@@ -78,43 +58,25 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         inputs: ticketIds.map(id => ({ id })),
-        properties: ["hs_pipeline", "hs_pipeline_stage", "subject"]
+        properties: ["hs_pipeline", "subject"]
       })
     });
 
-    if (!batchReadResponse.ok) {
-      const errorText = await batchReadResponse.text();
-      console.error(`Error fetching ticket details: ${batchReadResponse.status} ${errorText}`);
-      throw new Error(`Failed to fetch ticket details`);
-    }
+    if (!batchReadResponse.ok) throw new Error(`Failed to read ticket details`);
 
     const ticketsData = await batchReadResponse.json();
-    const tickets = ticketsData.results;
 
-    // 4. Filter tickets
-    const ticketsToUpdate = tickets.filter(ticket => {
-      const pipelineMatch = ticket.properties.hs_pipeline === target_pipeline_id;
-
-      let nameMatch = true;
-      if (ticket_name_filter) {
-        const subject = ticket.properties.subject || "";
-        nameMatch = subject.toLowerCase().includes(ticket_name_filter.toLowerCase());
-      }
-
-      // Optional: Don't update if already in the target stage?
-      // const stageDiffers = ticket.properties.hs_pipeline_stage !== new_stage_id;
-
-      return pipelineMatch && nameMatch;
+    // Filter: Find the ticket that matches the target_pipeline_id
+    const ticketsToUpdate = ticketsData.results.filter(ticket => {
+      return ticket.properties.hs_pipeline === target_pipeline_id;
     });
 
     if (ticketsToUpdate.length === 0) {
-      return NextResponse.json({
-        message: "No tickets matched the criteria"
-      });
+      console.log(`Found ${ticketIds.length} tickets, but none in pipeline ${target_pipeline_id}`);
+      return NextResponse.json({ message: "No tickets found in the target pipeline" });
     }
 
-    // 5. Update tickets
-    // POST /crm/v3/objects/tickets/batch/update
+    // 4. Update the Stage of the matching ticket(s)
     const batchUpdateUrl = `https://api.hubapi.com/crm/v3/objects/tickets/batch/update`;
     const updatePayload = {
       inputs: ticketsToUpdate.map(t => ({
@@ -134,36 +96,17 @@ export async function POST(request) {
       body: JSON.stringify(updatePayload)
     });
 
-    if (!updateResponse.ok) {
-      const errorText = await updateResponse.text();
-      console.error(`Error updating tickets: ${updateResponse.status} ${errorText}`);
-      throw new Error(`Failed to update tickets`);
-    }
+    if (!updateResponse.ok) throw new Error(`Failed to update tickets`);
 
     const updateResult = await updateResponse.json();
+    console.log(`Successfully updated ${updateResult.results.length} tickets.`);
 
-    return NextResponse.json(
-      {
-        message: `Successfully updated ${updateResult.results.length} tickets`
-      },
-      {
-        status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    return NextResponse.json({
+      message: `Updated ${updateResult.results.length} tickets in pipeline ${target_pipeline_id}`
+    });
 
   } catch (error) {
-    console.error("Error processing update-ticket action:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    console.error("Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
