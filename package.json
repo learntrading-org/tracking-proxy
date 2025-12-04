@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.2"
+    "react": "19.1.2",
+    "react-dom": "19.1.2",
+    "next": "15.5.7"
   },
   "devDependencies": {
     "typescript": "^5",
@@ -21,7 +21,7 @@
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint-config-next": "15.5.7",
     "@eslint/eslintrc": "^3"
   },
   "packageManager": "pnpm@7.33.6+sha512.90e27fd38047f18583f3342f784cc3f187f4d4caac89ebc1fffae18dcd7b2dde7678a0bf237481bcb8f7e8e66135fa34803856e4eb2c442ce082ffab5d9d241f"
