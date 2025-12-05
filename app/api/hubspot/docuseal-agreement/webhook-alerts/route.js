@@ -219,7 +219,7 @@ export async function POST(request) {
             const tcResponse = await fetch(thriveCartUrl, {
               method: "POST",
               headers: {
-                Authorization: thriveCartKey,
+                Authorization: `Bearer ${thriveCartKey}`,
               },
               body: formData,
             });
