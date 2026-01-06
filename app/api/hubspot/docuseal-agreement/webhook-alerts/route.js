@@ -185,7 +185,13 @@ export async function POST(request) {
     }
 
     // === THRIVECART & CONVERTKIT & EXTRA ALERTS (form.completed) ===
-    if (eventType === "form.completed" && email && email !== "N/A") {
+    // Only run for "BULLMANIA PLATINUM AGREEMENT" (ID: 301737)
+    if (
+      eventType === "form.completed" &&
+      email &&
+      email !== "N/A" &&
+      data.template?.id === 301737
+    ) {
       try {
         // Determine Name
         let userName = "";
