@@ -83,6 +83,7 @@ export async function POST(request) {
         const searchData = await searchRes.json();
         let contact = searchData.data?.[0]; // Take first match
         let contactId;
+        let phoneSaved = false;
 
         // 2. Create or Update
         if (!contact) {
@@ -122,6 +123,7 @@ export async function POST(request) {
 
                     const retryData = await retryRes.json();
                     contactId = retryData.id;
+                    phoneSaved = false;
 
                 } else {
                     throw new Error(`Intercom Create Failed: ${createRes.status} ${errText}`);
@@ -129,6 +131,7 @@ export async function POST(request) {
             } else {
                 const createData = await createRes.json();
                 contactId = createData.id;
+                if (formattedPhone) phoneSaved = true;
             }
 
         } else {
@@ -137,6 +140,10 @@ export async function POST(request) {
 
             // Check if phone needs adding
             const existingPhone = contact.phone;
+            if (existingPhone) {
+                phoneSaved = true;
+            }
+
             // "if the contact does not have a mobile number we need to ... add the mobile number."
             if (!existingPhone && formattedPhone) {
                 console.log("Contact missing phone. Updating...");
@@ -152,8 +159,10 @@ export async function POST(request) {
                     const errText = await updateRes.text();
                     console.error(`Intercom Update Phone Failed: ${updateRes.status} ${errText}`);
                     // We proceed to tag even if phone update fails
+                    phoneSaved = false;
                 } else {
                     console.log("Phone updated successfully.");
+                    phoneSaved = true;
                 }
             }
         }
@@ -183,7 +192,7 @@ export async function POST(request) {
                 contactId,
                 tagged: true,
                 email,
-                phoneUpdated: !!formattedPhone
+                phoneSaved
             }
         });
 
