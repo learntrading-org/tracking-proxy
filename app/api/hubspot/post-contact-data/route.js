@@ -50,12 +50,15 @@ export async function POST(request) {
         const formatPhone = (p) => {
             if (!p) return null;
             let clean = p.replace(/[^\d+]/g, '');
-            if (!clean.startsWith('+')) {
-                // robust fallback assumption? defaulting to + if missing might be risky without country code.
-                // For now, assuming provided phone has country code or user handles it.
-                // If we strictly need +: clean = "+" + clean;
+            // Handle 00 prefix
+            if (clean.startsWith('00')) {
+                clean = '+' + clean.substring(2);
             }
-            return clean;
+            if (!clean.startsWith('+')) {
+                // If missing +, and looks like it might have country code (e.g. 11+ chars), we could prepend + potentially
+                // But usually safest to leave as is and let validation fail/fallback.
+            }
+            return clean.length >= 7 ? clean : null;
         };
         const formattedPhone = formatPhone(phone);
 
@@ -100,11 +103,33 @@ export async function POST(request) {
 
             if (!createRes.ok) {
                 const errText = await createRes.text();
-                throw new Error(`Intercom Create Failed: ${createRes.status} ${errText}`);
-            }
+                // Check if it's a phone validation error (422)
+                if (createRes.status === 422 && errText.includes("phone")) {
+                    console.warn(`Intercom rejected phone number (${formattedPhone}). Retrying creation without phone.`);
 
-            const createData = await createRes.json();
-            contactId = createData.id;
+                    // Retry without phone
+                    const retryBody = { role: "user", email: email };
+                    const retryRes = await fetch("https://api.intercom.io/contacts", {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify(retryBody)
+                    });
+
+                    if (!retryRes.ok) {
+                        const retryErr = await retryRes.text();
+                        throw new Error(`Intercom Create Retry Failed: ${retryRes.status} ${retryErr}`);
+                    }
+
+                    const retryData = await retryRes.json();
+                    contactId = retryData.id;
+
+                } else {
+                    throw new Error(`Intercom Create Failed: ${createRes.status} ${errText}`);
+                }
+            } else {
+                const createData = await createRes.json();
+                contactId = createData.id;
+            }
 
         } else {
             console.log(`Contact found: ${contact.id}`);
