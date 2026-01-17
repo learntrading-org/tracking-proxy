@@ -168,7 +168,7 @@ export async function POST(request) {
         }
 
         // 3. Add Tag
-        if (contactId) {
+        if (contactId && phoneSaved) {
             console.log(`Applying tag ${TAG_ID} to contact ${contactId}`);
             const tagRes = await fetch(`https://api.intercom.io/contacts/${contactId}/tags`, {
                 method: "POST",
@@ -184,6 +184,8 @@ export async function POST(request) {
                 throw new Error(`Intercom Tag Failed: ${tagRes.status}`);
             }
             console.log("Tag applied successfully.");
+        } else {
+            console.log("Skipping tagging because phone number is missing or invalid.");
         }
 
         return NextResponse.json({
