@@ -36,7 +36,8 @@ export async function POST(request) {
             return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
         }
 
-        const TAG_ID = "13041517"; // WhatsApp Connect
+        const WHATSAPP_CONNECT_TAG_ID = "13041517"; // WhatsApp Connect
+        const LEAD_EMAIL_TAG_ID = "13041640"; // Lead Email
         const INTERCOM_VERSION = "2.14";
         const headers = {
             "Authorization": `Bearer ${intercomToken}`,
@@ -168,13 +169,15 @@ export async function POST(request) {
         }
 
         // 3. Add Tag
-        if (contactId && phoneSaved) {
-            console.log(`Applying tag ${TAG_ID} to contact ${contactId}`);
+        if (contactId) {
+            const tagToApply = phoneSaved ? WHATSAPP_CONNECT_TAG_ID : LEAD_EMAIL_TAG_ID;
+            console.log(`Applying tag ${tagToApply} (${phoneSaved ? "WhatsApp Connect" : "Lead Email"}) to contact ${contactId}`);
+
             const tagRes = await fetch(`https://api.intercom.io/contacts/${contactId}/tags`, {
                 method: "POST",
                 headers,
                 body: JSON.stringify({
-                    id: TAG_ID
+                    id: tagToApply
                 })
             });
 
@@ -185,7 +188,7 @@ export async function POST(request) {
             }
             console.log("Tag applied successfully.");
         } else {
-            console.log("Skipping tagging because phone number is missing or invalid.");
+            console.log("No contact ID found, skipping tagging.");
         }
 
         return NextResponse.json({
