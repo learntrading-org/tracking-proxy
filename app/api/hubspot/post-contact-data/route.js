@@ -191,6 +191,31 @@ export async function POST(request) {
             console.log("No contact ID found, skipping tagging.");
         }
 
+        // 4. Trigger Event
+        if (contactId) {
+            const EVENT_NAME = "outbound_message_trigger";
+            console.log(`Triggering event ${EVENT_NAME} for contact ${contactId}`);
+
+            const eventRes = await fetch("https://api.intercom.io/events", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    event_name: EVENT_NAME,
+                    created_at: Math.floor(Date.now() / 1000),
+                    id: contactId,
+                    email: email
+                })
+            });
+
+            if (!eventRes.ok) {
+                const errText = await eventRes.text();
+                console.error(`Intercom Event Trigger Failed: ${eventRes.status} ${errText}`);
+                // Not throwing here to ensure we return success for the contact/tag creation which were successful
+            } else {
+                console.log("Event triggered successfully.");
+            }
+        }
+
         return NextResponse.json({
             message: "Processed",
             result: {
