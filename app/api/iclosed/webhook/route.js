@@ -55,6 +55,168 @@ export async function OPTIONS(request) {
   });
 }
 
+
+/**
+ * Helper to check Intercom conversations and tag if user interacted with AI.
+ */
+/**
+ * Helper to check Intercom conversations and tag if user interacted with AI.
+ */
+async function checkAndTagIntercomUser(email, phone, intercomToken) {
+  if ((!email && !phone) || !intercomToken) return;
+
+  const TAG_WA = "13115759";
+  const TAG_EMAIL = "13115760";
+  const INTERCOM_VERSION = "2.14";
+  const headers = {
+    "Authorization": `Bearer ${intercomToken}`,
+    "Content-Type": "application/json",
+    "Intercom-Version": INTERCOM_VERSION,
+    "Accept": "application/json"
+  };
+
+  const contactsToCheck = [];
+
+  try {
+    // 1. Find Contact by Email
+    if (email) {
+      const emailRes = await fetch("https://api.intercom.io/contacts/search", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          query: { field: "email", operator: "=", value: email }
+        })
+      });
+
+      if (emailRes.ok) {
+        const data = await emailRes.json();
+        if (data.data?.[0]) contactsToCheck.push(data.data[0]);
+      } else {
+        console.error("[Intercom AI Check] Email Search Failed:", await emailRes.text());
+      }
+    }
+
+    // 2. Find Contact by Phone
+    if (phone) {
+      const phoneRes = await fetch("https://api.intercom.io/contacts/search", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          query: { field: "phone", operator: "=", value: phone }
+        })
+      });
+
+      if (phoneRes.ok) {
+        const data = await phoneRes.json();
+        if (data.data?.[0]) {
+          // Avoid duplicates
+          if (!contactsToCheck.find(c => c.id === data.data[0].id)) {
+            contactsToCheck.push(data.data[0]);
+          }
+        }
+      } else {
+        console.error("[Intercom AI Check] Phone Search Failed:", await phoneRes.text());
+      }
+    }
+
+    if (contactsToCheck.length === 0) {
+      console.log("[Intercom AI Check] No Intercom contacts found for email/phone:", email, phone);
+      return;
+    }
+
+    console.log(`[Intercom AI Check] Found ${contactsToCheck.length} unique contact(s). Checking interactions...`);
+
+    // 3. Check Interactions for each contact
+    for (const contact of contactsToCheck) {
+      console.log(`[Intercom AI Check] Checking contact ${contact.id}...`);
+
+      const convRes = await fetch(`https://api.intercom.io/conversations?type=user&intercom_user_id=${contact.id}`, {
+        headers
+      });
+
+      if (!convRes.ok) {
+        console.error("[Intercom AI Check] Conversations Fetch Failed:", await convRes.text());
+        continue;
+      }
+
+      const convData = await convRes.json();
+      const conversations = convData.conversations || [];
+      console.log(`[Intercom AI Check] Found ${conversations.length} conversations for ${contact.id}. Checking recent 5...`);
+
+      let taggedWA = false;
+      let taggedEmail = false;
+      const recentConversations = conversations.slice(0, 5);
+
+      await Promise.all(recentConversations.map(async (c) => {
+        if ((taggedWA && taggedEmail)) return;
+
+        try {
+          const detailRes = await fetch(`https://api.intercom.io/conversations/${c.id}`, { headers });
+          if (!detailRes.ok) return;
+          const detail = await detailRes.json();
+
+          const parts = detail.conversation_parts?.conversation_parts || [];
+          const timeline = [];
+          if (detail.source) timeline.push(detail.source);
+          if (parts) timeline.push(...parts);
+
+          let botSpoke = false;
+          let userRespondedAfterBot = false;
+
+          for (const part of timeline) {
+            const authorType = part.author?.type;
+            if (authorType === "bot") {
+              botSpoke = true;
+            } else if (authorType === "user" && botSpoke) {
+              userRespondedAfterBot = true;
+              break;
+            }
+          }
+
+          if (userRespondedAfterBot) {
+            const channel = detail.source?.delivered_as;
+            console.log(`[Intercom AI Check] Conversation ${c.id}: User replied to Bot. Channel: ${channel}`);
+
+            if (channel === "whatsapp" && !taggedWA) {
+              await tagIntercomContact(contact.id, TAG_WA, headers);
+              taggedWA = true;
+              console.log(`[Intercom AI Check] Tagged 'Call Booked WA' on ${contact.id}`);
+            } else if (!taggedEmail && (channel === "email" || channel === "customer_initiated" || channel === "chat" || channel === "admin_initiated")) {
+              // Fallback: Treat standard chat/email channels as "Call Booked Email"
+              await tagIntercomContact(contact.id, TAG_EMAIL, headers);
+              taggedEmail = true;
+              console.log(`[Intercom AI Check] Tagged 'Call Booked Email' on ${contact.id} (Channel: ${channel})`);
+            }
+          }
+        } catch (err) {
+          console.error(`[Intercom AI Check] Error checking conversation ${c.id}:`, err);
+        }
+      }));
+    }
+
+  } catch (err) {
+    console.error("[Intercom AI Check] Error in checkAndTagIntercomUser:", err);
+  }
+}
+
+// Helper to tag Intercom User
+async function tagIntercomContact(contactId, tagId, headers) {
+  try {
+    const res = await fetch(`https://api.intercom.io/contacts/${contactId}/tags`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ id: tagId })
+    });
+    if (res.ok) {
+      console.log(`Intercom Tag ${tagId} applied to ${contactId}`);
+    } else {
+      console.error(`Failed to apply Intercom tag ${tagId}:`, await res.text());
+    }
+  } catch (e) {
+    console.error("Error applying Intercom tag:", e);
+  }
+}
+
 // Handle the main webhook POST request
 export async function POST(request) {
   try {
@@ -75,6 +237,7 @@ export async function POST(request) {
     // --- 2. Get Common Variables ---
     const inviteeEmail = eventData.invitee?.email;
     const apiSecret = process.env.CONVERTKIT_API_SECRET;
+    const intercomToken = process.env.INTERCOM_ACCESS_TOKEN; // New token
 
     // If there's no email, we can't do anything.
     if (!inviteeEmail) {
@@ -88,6 +251,19 @@ export async function POST(request) {
         },
         { status: 200, headers: { "Access-Control-Allow-Origin": "*" } }
       );
+    }
+
+    // --- NEW: Check Intercom for AI Interactions ---
+    if (intercomToken) {
+      // Trying to find phone in typical fields
+      const inviteePhone = eventData.invitee?.text_notification_phone || eventData.invitee?.phone || eventData.invitee?.mobile;
+
+      // Fire and forget - don't block the response
+      checkAndTagIntercomUser(inviteeEmail, inviteePhone, intercomToken).catch(e =>
+        console.error("Background Intercom Check Failed:", e)
+      );
+    } else {
+      console.warn("INTERCOM_ACCESS_TOKEN not set, skipping Intercom AI check.");
     }
 
     // If the API secret isn't set, log a server-side error.
