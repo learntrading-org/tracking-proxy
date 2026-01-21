@@ -258,10 +258,13 @@ export async function POST(request) {
       // Trying to find phone in typical fields
       const inviteePhone = eventData.invitee?.text_notification_phone || eventData.invitee?.phone || eventData.invitee?.mobile;
 
-      // Fire and forget - don't block the response
-      checkAndTagIntercomUser(inviteeEmail, inviteePhone, intercomToken).catch(e =>
-        console.error("Background Intercom Check Failed:", e)
-      );
+      // In Serverless/Vercel, we must await the promise to ensure it runs before the process exits.
+      // This will delay the webhook response slightly (by a few seconds), which is acceptable.
+      try {
+        await checkAndTagIntercomUser(inviteeEmail, inviteePhone, intercomToken);
+      } catch (e) {
+        console.error("Intercom Check Failed:", e);
+      }
     } else {
       console.warn("INTERCOM_ACCESS_TOKEN not set, skipping Intercom AI check.");
     }
