@@ -130,22 +130,46 @@ async function checkAndTagIntercomUser(email, phone, intercomToken) {
     for (const contact of contactsToCheck) {
       console.log(`[Intercom AI Check] Checking contact ${contact.id}...`);
 
-      const convRes = await fetch(`https://api.intercom.io/conversations?type=user&intercom_user_id=${contact.id}`, {
-        headers
+      // 2. Fetch Conversations (Corrected for API v2.14)
+      // We use the Search API to filter specifically by contact_id. 
+      // The previous GET endpoint likely ignored 'intercom_user_id' and returned global conversations.
+      const convRes = await fetch("https://api.intercom.io/conversations/search", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          query: {
+            operator: "AND",
+            value: [
+              {
+                field: "contact_ids",
+                operator: "=",
+                value: contact.id
+              }
+            ]
+          },
+          pagination: {
+            per_page: 5
+          },
+          sort: {
+            field: "updated_at",
+            order: "descending"
+          }
+        })
       });
 
       if (!convRes.ok) {
-        console.error("[Intercom AI Check] Conversations Fetch Failed:", await convRes.text());
+        console.error("[Intercom AI Check] Conversations Search Failed:", await convRes.text());
         continue;
       }
 
       const convData = await convRes.json();
       const conversations = convData.conversations || [];
-      console.log(`[Intercom AI Check] Found ${conversations.length} conversations for ${contact.id}. Checking recent 5...`);
+      console.log(`[Intercom AI Check] Found ${conversations.length} conversations for ${contact.id}. Checking details...`);
 
       let taggedWA = false;
       let taggedEmail = false;
-      const recentConversations = conversations.slice(0, 5);
+      // No need to slice, we requested only 5.
+      const recentConversations = conversations;
 
       await Promise.all(recentConversations.map(async (c) => {
         if ((taggedWA && taggedEmail)) return;
