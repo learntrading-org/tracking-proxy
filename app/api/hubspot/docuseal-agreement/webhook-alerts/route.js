@@ -249,10 +249,31 @@ export async function POST(request) {
           tcStatus = "Skipped (No Key)";
         }
 
-        // --- 2. ConvertKit: Add Tag 11448082 ---
+        // --- 2. ConvertKit: Check if subscriber exists, then add Tag 11448082 ---
         const ckSecret = process.env.CONVERTKIT_API_SECRET;
         if (ckSecret) {
           try {
+            // First, check if subscriber exists
+            let subscriberExists = false;
+            try {
+              const checkUrl = `https://api.convertkit.com/v3/subscribers?api_secret=${ckSecret}&email_address=${encodeURIComponent(email)}`;
+              const checkResponse = await fetch(checkUrl, {
+                method: "GET",
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+              });
+
+              if (checkResponse.ok) {
+                const checkData = await checkResponse.json();
+                const subscribers = checkData.subscribers || [];
+                subscriberExists = subscribers.length > 0;
+                console.log(`ConvertKit subscriber check: ${subscriberExists ? 'exists' : 'does not exist'} for ${email}`);
+              }
+            } catch (checkError) {
+              console.warn("ConvertKit subscriber check failed, proceeding with subscribe:", checkError.message);
+              // Continue anyway - the subscribe endpoint will handle both cases
+            }
+
+            // Subscribe and tag the user (works for both existing and new subscribers)
             const ckUrl = "https://api.convertkit.com/v3/tags/11448082/subscribe";
             const ckResponse = await fetch(ckUrl, {
               method: "POST",
@@ -268,7 +289,10 @@ export async function POST(request) {
               ckStatus = "Failed";
               errors.push(`ConvertKit: ${errText}`);
             } else {
-              console.log("ConvertKit success");
+              const successMessage = subscriberExists
+                ? "ConvertKit success (existing subscriber tagged)"
+                : "ConvertKit success (new subscriber created and tagged)";
+              console.log(successMessage);
               ckStatus = "Success";
             }
           } catch (e) {
