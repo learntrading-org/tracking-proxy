@@ -39,8 +39,13 @@ export async function POST(request) {
       submitter.name = fullName;
       submitter.fields = [
         {
-          name: "Full Name",
-          default_value: fullName,
+          name: "FIRST NAME",
+          default_value: firstName,
+          readonly: false,
+        },
+        {
+          name: "LAST NAME",
+          default_value: lastName || "",
           readonly: false,
         },
       ];
