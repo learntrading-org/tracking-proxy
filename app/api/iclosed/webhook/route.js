@@ -336,25 +336,41 @@ export async function POST(request) {
     }
 
     if (assignedEmail) {
-      console.log(`Call is assigned to: ${assignedEmail}.`);
-      let tagIdToAssign = null;
+      const eventName = eventData.event_type?.name || "";
+      const eventNameLower = eventName.toLowerCase();
 
-      if (assignedEmail === "james@bullmania.com") {
-        tagIdToAssign = 11873105; // James's tag
-      } else if (assignedEmail === "phil@bullmania.com") {
-        tagIdToAssign = 11873106; // Phil's tag
-      } else if (assignedEmail === "cailum@bullmania.com") {
-        tagIdToAssign = 12824071; // Cailum's tag
-      }
+      // Filter: Must include "mechanical rules" and NOT include "review" (all lowercased)
+      const shouldRunTagging =
+        eventNameLower.includes("mechanical rules") &&
+        !eventNameLower.includes("review");
 
-      if (tagIdToAssign) {
+      if (shouldRunTagging) {
         console.log(
-          `Assignee email matches. Attempting to add tag ${tagIdToAssign} to ${inviteeEmail}.`
+          `Call is assigned to: ${assignedEmail}. Event "${eventName}" matches criteria.`
         );
-        await addTagToUser(inviteeEmail, tagIdToAssign, apiSecret);
+        let tagIdToAssign = null;
+
+        if (assignedEmail === "james@bullmania.com") {
+          tagIdToAssign = 11873105; // James's tag
+        } else if (assignedEmail === "phil@bullmania.com") {
+          tagIdToAssign = 11873106; // Phil's tag
+        } else if (assignedEmail === "cailum@bullmania.com") {
+          tagIdToAssign = 12824071; // Cailum's tag
+        }
+
+        if (tagIdToAssign) {
+          console.log(
+            `Assignee email matches. Attempting to add tag ${tagIdToAssign} to ${inviteeEmail}.`
+          );
+          await addTagToUser(inviteeEmail, tagIdToAssign, apiSecret);
+        } else {
+          console.log(
+            "Assignee email did not match specified emails. No new tag added from this block."
+          );
+        }
       } else {
         console.log(
-          "Assignee email did not match specified emails. No new tag added from this block."
+          `Skipping assignee tag logic: Event "${eventName}" does not match criteria.`
         );
       }
     } else {
