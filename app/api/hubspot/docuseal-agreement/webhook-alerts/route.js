@@ -42,17 +42,27 @@ export async function POST(request) {
       email = data.created_by_user.email + " (creator)";
     }
 
-    // Extract Country from values array (case-insensitive + trim)
+    // Extract fields from values array (case-insensitive + trim)
     let country = null;
+    let firstName = null;
+    let lastName = null;
+
     if (data.values && Array.isArray(data.values)) {
-      const countryItem = data.values.find(
-        (item) => item.field && item.field.trim().toLowerCase() === "country"
-      );
-      if (countryItem?.value) {
-        country = countryItem.value.trim();
-        // If value is empty after trim, treat as null
-        if (country === "") country = null;
-      }
+      data.values.forEach((item) => {
+        if (!item.field) return;
+        const fieldName = item.field.trim().toLowerCase();
+        const fieldValue = item.value ? item.value.trim() : null;
+
+        if (!fieldValue) return;
+
+        if (fieldName === "country") {
+          country = fieldValue;
+        } else if (fieldName === "first name") {
+          firstName = fieldValue;
+        } else if (fieldName === "last name") {
+          lastName = fieldValue;
+        }
+      });
     }
 
     // Map event types to human-readable status messages
@@ -104,6 +114,12 @@ export async function POST(request) {
       { title: "Template", value: templateName, short: true },
     ];
 
+    if (firstName) {
+      fields.push({ title: "First Name", value: firstName, short: true });
+    }
+    if (lastName) {
+      fields.push({ title: "Last Name", value: lastName, short: true });
+    }
     if (country) {
       fields.push({ title: "Country", value: country, short: true });
     }
@@ -142,8 +158,18 @@ export async function POST(request) {
       console.error("Failed to send to Slack:", await slackResponse.text());
     }
 
-    // === HUBSPOT COUNTRY UPDATE (only on form.completed and when country is present) ===
-    if (eventType === "form.completed" && country && email && email !== "N/A") {
+    // === HUBSPOT CONTACT UPDATE (only on form.completed) ===
+    const hubspotProperties = {};
+    if (country) hubspotProperties.country = country;
+    if (firstName) hubspotProperties.firstname = firstName;
+    if (lastName) hubspotProperties.lastname = lastName;
+
+    if (
+      eventType === "form.completed" &&
+      email &&
+      email !== "N/A" &&
+      Object.keys(hubspotProperties).length > 0
+    ) {
       const hubspotToken = process.env.HUBSPOT_ACCESS_TOKEN; // ← Set this in your .env (Private App token or OAuth)
 
       if (!hubspotToken) {
@@ -162,20 +188,20 @@ export async function POST(request) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              properties: {
-                country: country,
-              },
+              properties: hubspotProperties,
             }),
           });
 
           if (hubspotResponse.ok) {
             console.log(
-              `Successfully updated HubSpot country for ${email} → ${country}`
+              `Successfully updated HubSpot properties for ${email}: ${JSON.stringify(
+                hubspotProperties
+              )}`
             );
           } else {
             const errorBody = await hubspotResponse.text();
             console.error(
-              `Failed to update HubSpot country for ${email}: ${hubspotResponse.status} ${errorBody}`
+              `Failed to update HubSpot properties for ${email}: ${hubspotResponse.status} ${errorBody}`
             );
           }
         } catch (err) {
