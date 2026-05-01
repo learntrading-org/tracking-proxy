@@ -73,27 +73,36 @@ export async function POST(request) {
         if (contact) {
             // 2. Update existing contact
             const contactId = contact.id;
-            const updateUrl = `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`;
-            const updateResponse = await fetch(updateUrl, {
-                method: "PATCH",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    properties: {
-                        vsl_video_watch: percentage / 100,
+            const currentWatchStr = contact.properties.vsl_video_watch;
+            const currentWatchDecimal = currentWatchStr ? parseFloat(currentWatchStr) : 0;
+            const newWatchDecimal = percentage / 100;
+
+            if (newWatchDecimal > currentWatchDecimal || !currentWatchStr) {
+                const updateUrl = `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`;
+                const updateResponse = await fetch(updateUrl, {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
                     },
-                }),
-            });
+                    body: JSON.stringify({
+                        properties: {
+                            vsl_video_watch: newWatchDecimal,
+                        },
+                    }),
+                });
 
-            if (!updateResponse.ok) {
-                const errorText = await updateResponse.text();
-                throw new Error(`HubSpot Update API error: ${errorText}`);
+                if (!updateResponse.ok) {
+                    const errorText = await updateResponse.text();
+                    throw new Error(`HubSpot Update API error: ${errorText}`);
+                }
+
+                result = await updateResponse.json();
+                console.log(`Updated contact ${contactId} with vsl_video_watch: ${percentage}`);
+            } else {
+                console.log(`Skipped updating contact ${contactId}. Current vsl_video_watch (${currentWatchDecimal * 100}%) is >= new value (${percentage}%).`);
+                result = contact; // Return existing contact info
             }
-
-            result = await updateResponse.json();
-            console.log(`Updated contact ${contactId} with vsl_video_watch: ${percentage}`);
 
         } else {
             // 3. Create new contact
