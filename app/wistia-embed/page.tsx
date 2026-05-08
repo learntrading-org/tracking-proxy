@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Calendar, Search, Activity, PlayCircle, Loader2, BarChart2 } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Search, Activity, PlayCircle, Loader2, BarChart2 } from 'lucide-react';
 import { format, subDays, parseISO, isValid } from 'date-fns';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -22,7 +22,7 @@ function WistiaDashboardContent() {
   const [appliedStartDate, setAppliedStartDate] = useState(startDateInput);
   const [appliedEndDate, setAppliedEndDate] = useState(endDateInput);
   
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,17 +45,17 @@ function WistiaDashboardContent() {
         const statsArray = Array.isArray(result) ? result : (result.data || result.stats || []);
         
         // Ensure data is sorted by date and formatted properly
-        const formattedData = statsArray.map((item: any) => ({
+        const formattedData = statsArray.map((item: Record<string, any>) => ({
           ...item,
           // Extract commonly used metrics (Wistia might use load_count, play_count, etc)
           load_count: item.load_count || item.loads || 0,
           play_count: item.play_count || item.plays || 0,
           date: item.date || item.day || '',
-        })).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        })).sort((a: Record<string, any>, b: Record<string, any>) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         setData(formattedData);
-      } catch (err: any) {
-        setError(err.message || 'An error occurred while fetching data');
+      } catch (err: unknown) {
+        setError((err as Error).message || 'An error occurred while fetching data');
       } finally {
         setLoading(false);
       }
@@ -80,9 +80,9 @@ function WistiaDashboardContent() {
 
   const totals = useMemo(() => {
     return data.reduce(
-      (acc, curr) => ({
-        loads: acc.loads + (curr.load_count || 0),
-        plays: acc.plays + (curr.play_count || 0),
+      (acc: { loads: number; plays: number }, curr) => ({
+        loads: acc.loads + (Number(curr.load_count) || 0),
+        plays: acc.plays + (Number(curr.play_count) || 0),
       }),
       { loads: 0, plays: 0 }
     );
@@ -90,14 +90,14 @@ function WistiaDashboardContent() {
 
   const playRate = totals.loads > 0 ? ((totals.plays / totals.loads) * 100).toFixed(1) : '0.0';
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: any[], label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl shadow-2xl">
           <p className="text-neutral-300 mb-2 font-medium">
-            {isValid(parseISO(label)) ? format(parseISO(label), 'MMM d, yyyy') : label}
+            {label ? (isValid(parseISO(label)) ? format(parseISO(label), 'MMM d, yyyy') : label) : ''}
           </p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: { color: string; name: string; value: number }, index: number) => (
             <div key={`item-${index}`} className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
               <span className="text-sm font-medium capitalize text-neutral-400">

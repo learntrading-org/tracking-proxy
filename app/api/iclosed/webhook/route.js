@@ -43,7 +43,7 @@ async function addTagToUser(email, tagId, apiSecret) {
 }
 
 // Handle CORS preflight requests
-export async function OPTIONS(request) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
