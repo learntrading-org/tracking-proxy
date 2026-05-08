@@ -26,8 +26,8 @@ export async function GET(request: Request) {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
-        // Optional: 'X-Wistia-API-Version': '2026-03' if required, but default often works.
-      }
+      },
+      next: { revalidate: 3600 } // Cache responses for 1 hour
     });
 
     if (!response.ok) {

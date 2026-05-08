@@ -12,10 +12,15 @@ function WistiaDashboardContent() {
 
   const urlMediaId = searchParams?.get('mediaId') || '';
   
-  const [mediaId, setMediaId] = useState(urlMediaId);
+  // Input states
   const [inputMediaId, setInputMediaId] = useState(urlMediaId);
-  const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startDateInput, setStartDateInput] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
+  const [endDateInput, setEndDateInput] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  // Applied states for fetching
+  const [appliedMediaId, setAppliedMediaId] = useState(urlMediaId);
+  const [appliedStartDate, setAppliedStartDate] = useState(startDateInput);
+  const [appliedEndDate, setAppliedEndDate] = useState(endDateInput);
   
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,13 +28,13 @@ function WistiaDashboardContent() {
 
   // Fetch data
   useEffect(() => {
-    if (!mediaId) return;
+    if (!appliedMediaId) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError('');
       try {
-        const res = await fetch(`/api/wistia/stats?mediaId=${encodeURIComponent(mediaId)}&start_date=${startDate}&end_date=${endDate}`);
+        const res = await fetch(`/api/wistia/stats?mediaId=${encodeURIComponent(appliedMediaId)}&start_date=${appliedStartDate}&end_date=${appliedEndDate}`);
         if (!res.ok) {
           const errData = await res.json();
           throw new Error(errData.error || 'Failed to fetch data');
@@ -57,11 +62,14 @@ function WistiaDashboardContent() {
     };
 
     fetchData();
-  }, [mediaId, startDate, endDate]);
+  }, [appliedMediaId, appliedStartDate, appliedEndDate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setMediaId(inputMediaId);
+    setAppliedMediaId(inputMediaId);
+    setAppliedStartDate(startDateInput);
+    setAppliedEndDate(endDateInput);
+    
     if (inputMediaId !== urlMediaId) {
       // Update URL so it can be copied/embedded cleanly
       const newUrl = new URL(window.location.href);
@@ -137,8 +145,8 @@ function WistiaDashboardContent() {
               <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">From</label>
               <input
                 type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                value={startDateInput}
+                onChange={(e) => setStartDateInput(e.target.value)}
                 className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all [color-scheme:dark]"
               />
             </div>
@@ -147,8 +155,8 @@ function WistiaDashboardContent() {
               <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">To</label>
               <input
                 type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                value={endDateInput}
+                onChange={(e) => setEndDateInput(e.target.value)}
                 className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all [color-scheme:dark]"
               />
             </div>
@@ -172,14 +180,14 @@ function WistiaDashboardContent() {
         )}
 
         {/* Stats Content */}
-        {!mediaId && !loading && !error && (
+        {!appliedMediaId && !loading && !error && (
           <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-neutral-800 rounded-2xl bg-neutral-900/30">
             <PlayCircle className="w-12 h-12 text-neutral-600 mb-4" />
             <p className="text-neutral-400 text-sm font-medium">Enter a Media ID to view analytics</p>
           </div>
         )}
 
-        {mediaId && !error && (
+        {appliedMediaId && !error && (
           <div className="space-y-6 fade-in animate-in slide-in-from-bottom-4 duration-500">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
