@@ -9,20 +9,25 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
+    "lucide-react": "^1.14.0",
+    "next": "15.5.7",
     "react": "19.1.2",
     "react-dom": "19.1.2",
-    "next": "15.5.7"
+    "react-is": "^19.2.6",
+    "recharts": "^3.8.1",
+    "stripe": "^20.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.7",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   },
   "packageManager": "pnpm@7.33.6+sha512.90e27fd38047f18583f3342f784cc3f187f4d4caac89ebc1fffae18dcd7b2dde7678a0bf237481bcb8f7e8e66135fa34803856e4eb2c442ce082ffab5d9d241f"
 }
