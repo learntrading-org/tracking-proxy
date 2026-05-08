@@ -64,8 +64,8 @@ function WistiaDashboardContent() {
     fetchData();
   }, [appliedMediaId, appliedStartDate, appliedEndDate]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
     setAppliedMediaId(inputMediaId);
     setAppliedStartDate(startDateInput);
     setAppliedEndDate(endDateInput);
@@ -75,6 +75,12 @@ function WistiaDashboardContent() {
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('mediaId', inputMediaId);
       router.replace(newUrl.pathname + newUrl.search);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch(e);
     }
   };
 
@@ -126,7 +132,7 @@ function WistiaDashboardContent() {
             <p className="text-neutral-400 text-sm">Embeddable performance report for a specific media item.</p>
           </div>
 
-          <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5 flex-1 min-w-[200px]">
               <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Media ID</label>
               <div className="relative">
@@ -136,6 +142,7 @@ function WistiaDashboardContent() {
                   placeholder="e.g. hashed_id"
                   value={inputMediaId}
                   onChange={(e) => setInputMediaId(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-neutral-600"
                 />
               </div>
@@ -162,13 +169,14 @@ function WistiaDashboardContent() {
             </div>
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleSearch}
               disabled={loading || !inputMediaId}
               className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all shadow-lg shadow-blue-900/20 active:scale-95 flex items-center justify-center min-w-[100px]"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
             </button>
-          </form>
+          </div>
         </div>
 
         {/* Error State */}
