@@ -69,13 +69,19 @@ export async function POST(request) {
       }
     }
 
+    // Format deliverables as an HTML unordered list to avoid DocuSeal DOCX parser errors
+    let deliverablesHtml = "";
+    if (parsedDeliverables.length > 0) {
+      deliverablesHtml = "<ul>" + parsedDeliverables.map(d => `<li>${d}</li>`).join("") + "</ul>";
+    }
+
     const requestBody = {
-      template_id: "548115",
+      template_id: 548115,
       submitters: [submitter],
       variables: {
         PROGRAM_FEE: programFee || "",
         END_DATE: endDate || "",
-        PROGRAM_DELIVERABLES: parsedDeliverables
+        PROGRAM_DELIVERABLES: deliverablesHtml
       },
       send_email: true,
       message: {
