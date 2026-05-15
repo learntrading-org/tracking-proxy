@@ -21,13 +21,28 @@ export async function POST(request) {
   try {
     const payload = await request.json();
 
-    const { fields } = payload;
-    const { email, firstName, lastName } = fields;
+    const { fields = {} } = payload;
     
-    // Extract new custom fields
-    const programFee = fields.PROGRAM_FEE || fields.programFee;
-    const endDate = fields.END_DATE || fields.endDate;
-    const programDeliverables = fields.PROGRAM_DELIVERABLES || fields.programDeliverables;
+    console.log("HubSpot Payload Fields:", JSON.stringify(fields, null, 2));
+
+    // Helper for case-insensitive extraction
+    const getField = (keys) => {
+      for (const key of keys) {
+        if (fields[key] !== undefined && fields[key] !== null) return fields[key];
+        const lowerKey = Object.keys(fields).find(k => k.toLowerCase() === key.toLowerCase());
+        if (lowerKey) return fields[lowerKey];
+      }
+      return "";
+    };
+
+    const email = getField(['email']);
+    const firstName = getField(['firstName', 'first_name']);
+    const lastName = getField(['lastName', 'last_name']);
+    
+    // Extract new custom fields (HubSpot internal names are often snake_case)
+    const programFee = getField(['PROGRAM_FEE', 'programFee', 'program_fee']);
+    const endDate = getField(['END_DATE', 'endDate', 'end_date']);
+    const programDeliverables = getField(['PROGRAM_DELIVERABLES', 'programDeliverables', 'program_deliverables']) || [];
 
     const apiToken = process.env.DOCUSEAL_API_TOKEN;
 
