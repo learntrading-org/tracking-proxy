@@ -40,9 +40,39 @@ export async function POST(request) {
     const lastName = getField(['lastName', 'last_name']);
     
     // Extract new custom fields (HubSpot internal names are often snake_case)
-    const programFee = getField(['PROGRAM_FEE', 'programFee', 'program_fee']);
-    const endDate = getField(['END_DATE', 'endDate', 'end_date']);
+    const programFeeRaw = getField(['PROGRAM_FEE', 'programFee', 'program_fee']);
+    const endDateRaw = getField(['END_DATE', 'endDate', 'end_date']);
     const programDeliverables = getField(['PROGRAM_DELIVERABLES', 'programDeliverables', 'program_deliverables']) || [];
+
+    // Format the Fee
+    let formattedFee = programFeeRaw;
+    if (formattedFee) {
+      const numericFee = parseFloat(String(formattedFee).replace(/[^\d.-]/g, ''));
+      if (!isNaN(numericFee)) {
+        formattedFee = new Intl.NumberFormat('en-US', { 
+          style: 'currency', 
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2
+        }).format(numericFee);
+      }
+    }
+
+    // Format the Date
+    let formattedDate = endDateRaw;
+    if (formattedDate) {
+      const isNumericTimestamp = !isNaN(Number(formattedDate)) && String(formattedDate).trim() !== '';
+      const timestamp = isNumericTimestamp ? Number(formattedDate) : formattedDate;
+      const dateObj = new Date(timestamp);
+      
+      if (!isNaN(dateObj.getTime())) {
+        formattedDate = new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: '2-digit',
+          year: 'numeric'
+        }).format(dateObj);
+      }
+    }
 
     const apiToken = process.env.DOCUSEAL_API_TOKEN;
 
@@ -107,8 +137,8 @@ export async function POST(request) {
       ],
       submitters: [submitter],
       variables: {
-        PROGRAM_FEE: programFee || "",
-        END_DATE: endDate || "",
+        PROGRAM_FEE: formattedFee || "",
+        END_DATE: formattedDate || "",
         PROGRAM_DELIVERABLES: deliverablesHtml
       },
       send_email: true,
