@@ -1,5 +1,7 @@
 // app/api/hubspot/custom-docuseal-agreement/route.js
 import { NextResponse } from "next/server";
+import fs from 'fs';
+import path from 'path';
 
 // Handle CORS preflight requests
 export async function OPTIONS(request) {
@@ -75,8 +77,18 @@ export async function POST(request) {
       deliverablesHtml = "<ul>" + parsedDeliverables.map(d => `<li>${d}</li>`).join("") + "</ul>";
     }
 
+    // Read the DOCX file and convert to base64
+    const docxPath = path.join(process.cwd(), 'app', 'api', 'hubspot', 'custom-docuseal-agreement', 'template.docx');
+    const base64File = fs.readFileSync(docxPath).toString('base64');
+
     const requestBody = {
-      template_id: 548115,
+      name: "BULLMANIA CUSTOM AGREEMENT",
+      documents: [
+        {
+          name: "MASTER BULLMANIA PLATINUM AGREEMENT - CUSTOM.docx",
+          file: base64File
+        }
+      ],
       submitters: [submitter],
       variables: {
         PROGRAM_FEE: programFee || "",
@@ -90,7 +102,7 @@ export async function POST(request) {
       },
     };
 
-    const response = await fetch("https://api.docuseal.eu/submissions", {
+    const response = await fetch("https://api.docuseal.eu/submissions/docx", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -211,12 +211,12 @@ export async function POST(request) {
     }
 
     // === THRIVECART & CONVERTKIT & EXTRA ALERTS (form.completed) ===
-    // Only run for "BULLMANIA CUSTOM AGREEMENT" (ID: 548115)
+    // Only run for "BULLMANIA CUSTOM AGREEMENT"
     if (
       eventType === "form.completed" &&
       email &&
       email !== "N/A" &&
-      data.template?.id === 548115
+      data.template?.name === "BULLMANIA CUSTOM AGREEMENT"
     ) {
       try {
         // Determine Name
