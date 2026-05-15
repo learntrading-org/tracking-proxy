@@ -25,6 +25,11 @@ export async function POST(request) {
     const data = payload.data;
     const timestamp = payload.timestamp;
 
+    // Only process webhooks for the 301737 template
+    if (data.template?.id !== 301737) {
+      return NextResponse.json({ status: "ignored", reason: "Template ID mismatch" }, { status: 200 });
+    }
+
     // Extract email from possible places
     let email = data.email || "N/A";
     if (

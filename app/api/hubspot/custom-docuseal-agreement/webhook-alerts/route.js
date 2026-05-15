@@ -25,6 +25,11 @@ export async function POST(request) {
     const data = payload.data;
     const timestamp = payload.timestamp;
 
+    // Only process webhooks for the custom agreement template
+    if (data.template?.name !== "BULLMANIA CUSTOM AGREEMENT") {
+      return NextResponse.json({ status: "ignored", reason: "Template name mismatch" }, { status: 200 });
+    }
+
     // Extract email from possible places
     let email = data.email || "N/A";
     if (
