@@ -35,7 +35,7 @@ export async function POST(request) {
 
     const submitter = {
       email,
-      role: "Client",
+      role: "Platinum Signer",
     };
 
     let fullName;
