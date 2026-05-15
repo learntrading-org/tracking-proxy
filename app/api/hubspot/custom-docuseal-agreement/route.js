@@ -38,6 +38,7 @@ export async function POST(request) {
     const submitter = {
       email,
       role: "Platinum Signer",
+      external_id: "BULLMANIA_CUSTOM_AGREEMENT",
     };
 
     let fullName;

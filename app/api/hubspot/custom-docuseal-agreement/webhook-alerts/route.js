@@ -26,7 +26,13 @@ export async function POST(request) {
     const timestamp = payload.timestamp;
 
     // Only process webhooks for the custom agreement template
-    if (data.template?.name !== "BULLMANIA CUSTOM AGREEMENT") {
+    const isCustomAgreement = data.external_id === "BULLMANIA_CUSTOM_AGREEMENT" || 
+                              data.submission?.external_id === "BULLMANIA_CUSTOM_AGREEMENT" || 
+                              data.template?.name === "BULLMANIA CUSTOM AGREEMENT" || 
+                              data.submission?.name === "BULLMANIA CUSTOM AGREEMENT" ||
+                              data.name === "BULLMANIA CUSTOM AGREEMENT";
+
+    if (!isCustomAgreement) {
       return NextResponse.json({ status: "ignored", reason: "Template name mismatch" }, { status: 200 });
     }
 
@@ -99,7 +105,7 @@ export async function POST(request) {
     const color = colorMap[eventType] || "#808080"; // default to gray
 
     // Additional details if available
-    const templateName = data.template ? data.template.name : "N/A";
+    const templateName = data.template?.name || data.submission?.name || data.name || "BULLMANIA CUSTOM AGREEMENT";
 
     // Extract submission URL from possible places
     let submissionUrl = "N/A";
@@ -220,8 +226,7 @@ export async function POST(request) {
     if (
       eventType === "form.completed" &&
       email &&
-      email !== "N/A" &&
-      data.template?.name === "BULLMANIA CUSTOM AGREEMENT"
+      email !== "N/A"
     ) {
       try {
         // Determine Name
