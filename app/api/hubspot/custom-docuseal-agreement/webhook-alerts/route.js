@@ -1,0 +1,414 @@
+// app/api/hubspot/custom-docuseal-agreement/webhook-alerts/route.js
+import { NextResponse } from "next/server";
+
+// Handle CORS preflight requests
+export async function OPTIONS(request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
+// Handle the main webhook POST request
+export async function POST(request) {
+  try {
+    const payload = await request.json();
+
+    // Extract the specific data fields
+
+    const eventType = payload.event_type;
+    const data = payload.data;
+    const timestamp = payload.timestamp;
+
+    // Extract email from possible places
+    let email = data.email || "N/A";
+    if (
+      email === "N/A" &&
+      data.submitters &&
+      data.submitters.length > 0 &&
+      data.submitters[0].email
+    ) {
+      email = data.submitters[0].email;
+    } else if (
+      email === "N/A" &&
+      data.created_by_user &&
+      data.created_by_user.email
+    ) {
+      email = data.created_by_user.email + " (creator)";
+    }
+
+    // Extract fields from values array (case-insensitive + trim)
+    let country = null;
+    let firstName = null;
+    let lastName = null;
+
+    if (data.values && Array.isArray(data.values)) {
+      data.values.forEach((item) => {
+        if (!item.field) return;
+        const fieldName = item.field.trim().toLowerCase();
+        const fieldValue = item.value ? item.value.trim() : null;
+
+        if (!fieldValue) return;
+
+        if (fieldName === "country") {
+          country = fieldValue;
+        } else if (fieldName === "first name") {
+          firstName = fieldValue;
+        } else if (fieldName === "last name") {
+          lastName = fieldValue;
+        }
+      });
+    }
+
+    // Map event types to human-readable status messages
+    const eventMap = {
+      "form.viewed": "Form Viewed",
+      "form.started": "Form Started",
+      "form.completed": "Form Completed (Signed)",
+      "form.declined": "Form Declined",
+      "submission.created": "Submission Created",
+      "submission.completed": "Submission Completed",
+      "submission.expired": "Submission Expired",
+      "submission.archived": "Submission Archived",
+    };
+
+    const statusMessage = eventMap[eventType] || eventType;
+
+    // Map event types to Slack attachment colors
+    const colorMap = {
+      "form.completed": "#36a64f", // green
+      "submission.completed": "#36a64f", // green
+      "form.declined": "#ff0000", // red
+      "submission.expired": "#ff0000", // red
+      "form.viewed": "#00bfff", // blue
+      "form.started": "#00bfff", // blue
+      "submission.created": "#00bfff", // blue
+      "submission.archived": "#808080", // gray
+    };
+
+    const color = colorMap[eventType] || "#808080"; // default to gray
+
+    // Additional details if available
+    const templateName = data.template ? data.template.name : "N/A";
+
+    // Extract submission URL from possible places
+    let submissionUrl = "N/A";
+    if (data.submission_url) {
+      submissionUrl = data.submission_url;
+    } else if (data.submission && data.submission.url) {
+      submissionUrl = data.submission.url;
+    } else if (data.slug) {
+      submissionUrl = `https://docuseal.eu/e/${data.slug}`;
+    } else if (data.url) {
+      submissionUrl = data.url;
+    }
+
+    // Construct Slack fields dynamically
+    const fields = [
+      { title: "Email", value: email, short: true },
+      { title: "Template", value: templateName, short: true },
+    ];
+
+    if (firstName) {
+      fields.push({ title: "First Name", value: firstName, short: true });
+    }
+    if (lastName) {
+      fields.push({ title: "Last Name", value: lastName, short: true });
+    }
+    if (country) {
+      fields.push({ title: "Country", value: country, short: true });
+    }
+
+    fields.push({
+      title: "Submission URL",
+      value: submissionUrl,
+      short: false,
+    });
+
+    // Construct Slack payload
+    const slackPayload = {
+      attachments: [
+        {
+          color: color,
+          title: `DocuSeal Event: ${statusMessage}`,
+          fields: fields,
+          footer: `Timestamp: ${timestamp}`,
+        },
+      ],
+    };
+
+    // Slack webhook URL
+    const slackWebhook = process.env.SLACK_DOCUSEAL_WEBHOOK;
+
+    // Send to Slack
+    const slackResponse = await fetch(slackWebhook, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(slackPayload),
+    });
+
+    if (!slackResponse.ok) {
+      console.error("Failed to send to Slack:", await slackResponse.text());
+    }
+
+    // === HUBSPOT CONTACT UPDATE (only on form.completed) ===
+    const hubspotProperties = {};
+    if (country) hubspotProperties.country = country;
+    if (firstName) hubspotProperties.firstname = firstName;
+    if (lastName) hubspotProperties.lastname = lastName;
+
+    if (
+      eventType === "form.completed" &&
+      email &&
+      email !== "N/A" &&
+      Object.keys(hubspotProperties).length > 0
+    ) {
+      const hubspotToken = process.env.HUBSPOT_ACCESS_TOKEN; // ← Set this in your .env (Private App token or OAuth)
+
+      if (!hubspotToken) {
+        console.error(
+          "HubSpot access token not configured in environment variables"
+        );
+      } else {
+        const encodedEmail = encodeURIComponent(email);
+        const hubspotUrl = `https://api.hubapi.com/crm/v3/objects/contacts/${encodedEmail}?idProperty=email`;
+
+        try {
+          const hubspotResponse = await fetch(hubspotUrl, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${hubspotToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              properties: hubspotProperties,
+            }),
+          });
+
+          if (hubspotResponse.ok) {
+            console.log(
+              `Successfully updated HubSpot properties for ${email}: ${JSON.stringify(
+                hubspotProperties
+              )}`
+            );
+          } else {
+            const errorBody = await hubspotResponse.text();
+            console.error(
+              `Failed to update HubSpot properties for ${email}: ${hubspotResponse.status} ${errorBody}`
+            );
+          }
+        } catch (err) {
+          console.error("Exception while updating HubSpot:", err);
+        }
+      }
+    }
+
+    // === THRIVECART & CONVERTKIT & EXTRA ALERTS (form.completed) ===
+    // Only run for "BULLMANIA CUSTOM AGREEMENT" (ID: 548115)
+    if (
+      eventType === "form.completed" &&
+      email &&
+      email !== "N/A" &&
+      data.template?.id === 548115
+    ) {
+      try {
+        // Determine Name
+        let userName = "";
+        if (data.submitters && data.submitters.length > 0 && data.submitters[0].name) {
+          userName = data.submitters[0].name;
+        } else if (data.created_by_user && data.created_by_user.name) {
+          userName = data.created_by_user.name;
+        }
+
+        console.log(`Processing additional integrations for ${email}`);
+
+        let tcStatus = "Skipped";
+        let ckStatus = "Skipped";
+        const errors = [];
+
+        // --- 1. ThriveCart: Grant Access to Course 187845 ---
+        const thriveCartKey = process.env.THRIVECART_API_KEY;
+        if (thriveCartKey) {
+          try {
+            const thriveCartUrl = "https://thrivecart.com/api/external/students";
+            const formData = new URLSearchParams();
+            formData.append("email", email);
+            formData.append("name", userName);
+            formData.append("course_id", "187845");
+            formData.append("trigger_emails", "true");
+            formData.append("tags[]", "");
+            formData.append("order_info[order_id]", "");
+            formData.append("order_info[purchase_type]", "");
+            formData.append("order_info[purchase_id]", "");
+
+            const tcResponse = await fetch(thriveCartUrl, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${thriveCartKey}`,
+              },
+              body: formData,
+            });
+
+            if (!tcResponse.ok) {
+              const errText = await tcResponse.text();
+              console.error("ThriveCart Error:", errText);
+              tcStatus = "Failed";
+              errors.push(`ThriveCart: ${errText}`);
+            } else {
+              console.log("ThriveCart success");
+              tcStatus = "Success";
+            }
+          } catch (e) {
+            console.error("ThriveCart Exception:", e);
+            tcStatus = "Exception";
+            errors.push(`ThriveCart Exception: ${e.message}`);
+          }
+        } else {
+          console.warn("Skipping ThriveCart: THRIVECART_API_KEY not set");
+          tcStatus = "Skipped (No Key)";
+        }
+
+        // --- 2. ConvertKit: Check if subscriber exists, then add Tag 11448082 ---
+        const ckSecret = process.env.CONVERTKIT_API_SECRET;
+        if (ckSecret) {
+          try {
+            // First, check if subscriber exists
+            let subscriberExists = false;
+            try {
+              const checkUrl = `https://api.convertkit.com/v3/subscribers?api_secret=${ckSecret}&email_address=${encodeURIComponent(email)}`;
+              const checkResponse = await fetch(checkUrl, {
+                method: "GET",
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+              });
+
+              if (checkResponse.ok) {
+                const checkData = await checkResponse.json();
+                const subscribers = checkData.subscribers || [];
+                subscriberExists = subscribers.length > 0;
+                console.log(`ConvertKit subscriber check: ${subscriberExists ? 'exists' : 'does not exist'} for ${email}`);
+              }
+            } catch (checkError) {
+              console.warn("ConvertKit subscriber check failed, proceeding with subscribe:", checkError.message);
+              // Continue anyway - the subscribe endpoint will handle both cases
+            }
+
+            // Subscribe and tag the user (works for both existing and new subscribers)
+            const ckUrl = "https://api.convertkit.com/v3/tags/11448082/subscribe";
+            const ckResponse = await fetch(ckUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json; charset=utf-8" },
+              body: JSON.stringify({
+                api_secret: ckSecret,
+                email: email
+              })
+            });
+            if (!ckResponse.ok) {
+              const errText = await ckResponse.text();
+              console.error("ConvertKit Error:", errText);
+              ckStatus = "Failed";
+              errors.push(`ConvertKit: ${errText}`);
+            } else {
+              const successMessage = subscriberExists
+                ? "ConvertKit success (existing subscriber tagged)"
+                : "ConvertKit success (new subscriber created and tagged)";
+              console.log(successMessage);
+              ckStatus = "Success";
+            }
+          } catch (e) {
+            console.error("ConvertKit Exception:", e);
+            ckStatus = "Exception";
+            errors.push(`ConvertKit Exception: ${e.message}`);
+          }
+        } else {
+          console.warn("Skipping ConvertKit: CONVERTKIT_API_SECRET not set");
+          ckStatus = "Skipped (No Key)";
+        }
+
+        // --- 3. Additional Slack Alert ---
+        if (slackWebhook) {
+          const hasFailure = tcStatus.includes("Failed") || tcStatus.includes("Exception") || ckStatus.includes("Failed") || ckStatus.includes("Exception");
+
+          let slackColor = "#36a64f"; // Green
+          let slackTitle = "Access Granted";
+          let slackText = "Access to Mechanical course and Initial email has been sent. Need to grant access to the platinum course bundle.";
+
+          if (hasFailure) {
+            slackColor = "#ff0000"; // Red
+            slackTitle = "Integration Errors Detected";
+            slackText = "Some automated actions failed. Please review the details below.";
+          }
+
+          const slackFields = [
+            { title: "User", value: `${userName} (${email})`, short: false },
+            { title: "ThriveCart", value: tcStatus, short: true },
+            { title: "ConvertKit", value: ckStatus, short: true }
+          ];
+
+          if (errors.length > 0) {
+            slackFields.push({ title: "Error Details", value: errors.join("\n").substring(0, 1000), short: false });
+          }
+
+          if (!hasFailure) {
+            // Retain the specific instruction about platinum course
+          } else {
+            slackFields.push({ title: "Next Steps", value: "Check logs and grant access manually if needed.", short: false });
+          }
+
+          const extraSlackPayload = {
+            attachments: [
+              {
+                color: slackColor,
+                title: slackTitle,
+                text: slackText,
+                fields: slackFields,
+                footer: `Timestamp: ${timestamp}`,
+              },
+            ],
+          };
+
+          await fetch(slackWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(extraSlackPayload),
+          });
+        }
+
+      } catch (integrationErr) {
+        console.error("Error in additional integrations:", integrationErr);
+      }
+    }
+
+    // Return success response
+    return NextResponse.json(
+      {
+        status: "success",
+        statusCode: 200,
+      },
+      {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+  }
+}
