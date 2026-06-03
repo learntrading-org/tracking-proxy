@@ -130,10 +130,14 @@ export async function POST(request) {
 
     const firstName = contactObject.firstName || contactObject.first_name || "";
     const lastName = contactObject.lastName || contactObject.last_name || "";
-    const phone = contactObject.phone || contactObject.mobile || contactObject.text_notification_phone || "";
+    const phone = contactObject.phoneNumber || contactObject.phone || contactObject.mobile || contactObject.text_notification_phone || "";
 
-    // Extract UTM properties from various possible paths
+    // Extract UTM properties from tracking object or root paths
+    const tracking = contactObject.tracking || eventData.tracking || {};
+
     const utmSource = 
+      tracking.utm_source || 
+      tracking.utmSource || 
       contactObject.utm_source || 
       contactObject.utmSource || 
       eventData.utm_source || 
@@ -142,6 +146,8 @@ export async function POST(request) {
       "";
 
     const utmMedium = 
+      tracking.utm_medium || 
+      tracking.utmMedium || 
       contactObject.utm_medium || 
       contactObject.utmMedium || 
       eventData.utm_medium || 
@@ -150,6 +156,8 @@ export async function POST(request) {
       "";
 
     const utmCampaign = 
+      tracking.utm_campaign || 
+      tracking.utmCampaign || 
       contactObject.utm_campaign || 
       contactObject.utmCampaign || 
       eventData.utm_campaign || 
@@ -158,6 +166,8 @@ export async function POST(request) {
       "";
 
     const utmContent = 
+      tracking.utm_content || 
+      tracking.utmContent || 
       contactObject.utm_content || 
       contactObject.utmContent || 
       eventData.utm_content || 
