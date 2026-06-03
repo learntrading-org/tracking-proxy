@@ -36,6 +36,16 @@ async function findHubSpotContact(email, token) {
           ],
         },
       ],
+      properties: [
+        "email",
+        "firstname",
+        "lastname",
+        "phone",
+        "utm_campaign",
+        "utm_content",
+        "utm_medium",
+        "utm_source",
+      ],
     }),
   });
 
@@ -183,16 +193,30 @@ export async function POST(request) {
       console.log(`Contact found in HubSpot with ID: ${existingContact.id}. Updating...`);
       
       const propertiesToUpdate = {};
-      // Sync basic details if provided
-      if (firstName) propertiesToUpdate.firstname = firstName;
-      if (lastName) propertiesToUpdate.lastname = lastName;
-      if (phone) propertiesToUpdate.phone = phone;
+      const currentProps = existingContact.properties || {};
 
-      // Sync UTM details if provided
-      if (utmCampaign) propertiesToUpdate.utm_campaign = utmCampaign;
-      if (utmContent) propertiesToUpdate.utm_content = utmContent;
-      if (utmMedium) propertiesToUpdate.utm_medium = utmMedium;
-      if (utmSource) propertiesToUpdate.utm_source = utmSource;
+      // Only update if the new value is provided AND is different from the current value in HubSpot
+      if (firstName && firstName !== currentProps.firstname) {
+        propertiesToUpdate.firstname = firstName;
+      }
+      if (lastName && lastName !== currentProps.lastname) {
+        propertiesToUpdate.lastname = lastName;
+      }
+      if (phone && phone !== currentProps.phone) {
+        propertiesToUpdate.phone = phone;
+      }
+      if (utmCampaign && utmCampaign !== currentProps.utm_campaign) {
+        propertiesToUpdate.utm_campaign = utmCampaign;
+      }
+      if (utmContent && utmContent !== currentProps.utm_content) {
+        propertiesToUpdate.utm_content = utmContent;
+      }
+      if (utmMedium && utmMedium !== currentProps.utm_medium) {
+        propertiesToUpdate.utm_medium = utmMedium;
+      }
+      if (utmSource && utmSource !== currentProps.utm_source) {
+        propertiesToUpdate.utm_source = utmSource;
+      }
 
       // Only make the request if we have properties to update
       if (Object.keys(propertiesToUpdate).length > 0) {
