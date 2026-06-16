@@ -17,8 +17,9 @@ export async function OPTIONS(request) {
 
 export async function POST(request) {
   try {
-    const { email, tagId } = await request.json();
-    console.log({ email, tagId });
+    const body = await request.json();
+    const { email, tagId, utm } = body;
+    console.log({ email, tagId, utm });
 
     // Validate required fields
     if (!email || !tagId) {
@@ -47,6 +48,41 @@ export async function POST(request) {
       );
     }
 
+    // Extract UTM parameters
+    const fields = {};
+    if (utm && typeof utm === "object") {
+      const campaign = utm.utm_campaign || utm.utmCampaign || utm.campaign || utm.Campaign || utm["UTM Campaign"];
+      const content = utm.utm_content || utm.utmContent || utm.content || utm.Content || utm["UTM Content"];
+      const medium = utm.utm_medium || utm.utmMedium || utm.medium || utm.Medium || utm["UTM Medium"];
+      const source = utm.utm_source || utm.utmSource || utm.source || utm.Source || utm["UTM Source"];
+
+      if (campaign !== undefined && campaign !== null && String(campaign).trim() !== "") fields.utm_campaign = campaign;
+      if (content !== undefined && content !== null && String(content).trim() !== "") fields.utm_content = content;
+      if (medium !== undefined && medium !== null && String(medium).trim() !== "") fields.utm_medium = medium;
+      if (source !== undefined && source !== null && String(source).trim() !== "") fields.utm_source = source;
+    }
+
+    // Also check root level as fallback
+    const rootCampaign = body.utm_campaign || body.utmCampaign || body["UTM Campaign"];
+    const rootContent = body.utm_content || body.utmContent || body["UTM Content"];
+    const rootMedium = body.utm_medium || body.utmMedium || body["UTM Medium"];
+    const rootSource = body.utm_source || body.utmSource || body["UTM Source"];
+
+    if (rootCampaign !== undefined && rootCampaign !== null && String(rootCampaign).trim() !== "" && fields.utm_campaign === undefined) {
+      fields.utm_campaign = rootCampaign;
+    }
+    if (rootContent !== undefined && rootContent !== null && String(rootContent).trim() !== "" && fields.utm_content === undefined) {
+      fields.utm_content = rootContent;
+    }
+    if (rootMedium !== undefined && rootMedium !== null && String(rootMedium).trim() !== "" && fields.utm_medium === undefined) {
+      fields.utm_medium = rootMedium;
+    }
+    if (rootSource !== undefined && rootSource !== null && String(rootSource).trim() !== "" && fields.utm_source === undefined) {
+      fields.utm_source = rootSource;
+    }
+
+    console.log("Parsed UTM fields for ConvertKit:", fields);
+
     // Get ConvertKit API secret from environment variables
     const apiSecret = process.env.CONVERTKIT_API_SECRET;
     if (!apiSecret) {
@@ -73,6 +109,7 @@ export async function POST(request) {
         body: JSON.stringify({
           api_secret: apiSecret,
           email: email,
+          ...(Object.keys(fields).length > 0 ? { fields } : {}),
         }),
       }
     );
