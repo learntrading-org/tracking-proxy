@@ -356,6 +356,8 @@ export async function POST(request) {
           tagIdToAssign = 11873106; // Phil's tag
         } else if (assignedEmail === "cailum@bullmania.com") {
           tagIdToAssign = 12824071; // Cailum's tag
+        } else if (assignedEmail === "jeremy@bullmania.com") {
+          tagIdToAssign = 20825718; // Jeremy's tag
         }
 
         if (tagIdToAssign) {
