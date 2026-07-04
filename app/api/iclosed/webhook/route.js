@@ -356,8 +356,6 @@ export async function POST(request) {
           tagIdToAssign = 11873106; // Phil's tag
         } else if (assignedEmail === "cailum@bullmania.com") {
           tagIdToAssign = 12824071; // Cailum's tag
-        } else if (assignedEmail === "jeremy@bullmania.com") {
-          tagIdToAssign = 20825718; // Jeremy's tag
         }
 
         if (tagIdToAssign) {
@@ -372,8 +370,33 @@ export async function POST(request) {
         }
       } else {
         console.log(
-          `Skipping assignee tag logic: Event "${eventName}" does not match criteria.`
+          `Skipping mechanical rules assignee tag logic: Event "${eventName}" does not match criteria.`
         );
+      }
+
+      // --- 4b. Tag based on assigned user for Discovery calls ---
+      const shouldRunDiscoveryTagging = eventNameLower.includes("discovery");
+
+      if (shouldRunDiscoveryTagging) {
+        console.log(
+          `Discovery call assigned to: ${assignedEmail}. Event "${eventName}" matches discovery criteria.`
+        );
+        let discoveryTagId = null;
+
+        if (assignedEmail === "jeremy@bullmania.com") {
+          discoveryTagId = 20825718; // Jeremy's tag
+        }
+
+        if (discoveryTagId) {
+          console.log(
+            `Discovery assignee email matches. Attempting to add tag ${discoveryTagId} to ${inviteeEmail}.`
+          );
+          await addTagToUser(inviteeEmail, discoveryTagId, apiSecret);
+        } else {
+          console.log(
+            "Discovery assignee email did not match specified emails. No new tag added."
+          );
+        }
       }
     } else {
       console.log(
