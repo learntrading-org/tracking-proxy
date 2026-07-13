@@ -306,17 +306,18 @@ export async function POST(request) {
     }
 
     // --- 3. ORIGINAL LOGIC: Tag based on event type ---
-    if (eventData.event_type?.slug === "mechanical-rules-strategy-session") {
+    const slug = eventData.event_type?.slug || "";
+    if (slug.includes("mechanical-rules-strategy") || slug.includes("strategy-call")) {
       const tagId = 11470881;
       console.log(
-        `Event "mechanical-rules-strategy-session" detected. Attempting to add tag ${tagId} to ${inviteeEmail}.`
+        `Event "${slug}" detected. Attempting to add tag ${tagId} to ${inviteeEmail}.`
       );
       // We use 'await' to ensure this call completes before the function finishes,
       // but we don't need to block the *next* logic block.
       await addTagToUser(inviteeEmail, tagId, apiSecret);
     } else {
       console.log(
-        `Received event type "${eventData.event_type?.slug}", which is not "mechanical-rules-strategy-session". No action for this block.`
+        `Received event type "${slug}", which is not a strategy session. No action for this block.`
       );
     }
 
@@ -339,10 +340,10 @@ export async function POST(request) {
       const eventName = eventData.event_type?.name || "";
       const eventNameLower = eventName.toLowerCase();
 
-      // Filter: Must include "mechanical rules" and NOT include "review" (all lowercased)
+      // Filter: Must include "mechanical rules" (not review) OR include "strategy call"
       const shouldRunTagging =
-        eventNameLower.includes("mechanical rules") &&
-        !eventNameLower.includes("review");
+        (eventNameLower.includes("mechanical rules") && !eventNameLower.includes("review")) ||
+        eventNameLower.includes("strategy call");
 
       if (shouldRunTagging) {
         console.log(
