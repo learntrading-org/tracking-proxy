@@ -307,7 +307,7 @@ export async function POST(request) {
 
     // --- 3. ORIGINAL LOGIC: Tag based on event type ---
     const slug = eventData.event_type?.slug || "";
-    if (slug.includes("mechanical-rules-strategy") || slug.includes("strategy-call")) {
+    if (slug.includes("mechanical-rules-strategy") || slug.includes("strategy-call") || slug.includes("quiz-review")) {
       const tagId = 11470881;
       console.log(
         `Event "${slug}" detected. Attempting to add tag ${tagId} to ${inviteeEmail}.`
@@ -340,10 +340,11 @@ export async function POST(request) {
       const eventName = eventData.event_type?.name || "";
       const eventNameLower = eventName.toLowerCase();
 
-      // Filter: Must include "mechanical rules" (not review) OR include "strategy call"
+      // Filter: Must include "mechanical rules" (not review), OR "strategy call", OR "quiz review"
       const shouldRunTagging =
         (eventNameLower.includes("mechanical rules") && !eventNameLower.includes("review")) ||
-        eventNameLower.includes("strategy call");
+        eventNameLower.includes("strategy call") ||
+        eventNameLower.includes("quiz review");
 
       if (shouldRunTagging) {
         console.log(
