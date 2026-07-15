@@ -120,7 +120,19 @@ export async function POST(request) {
     // Format deliverables as an HTML unordered list to avoid DocuSeal DOCX parser errors
     let deliverablesHtml = "";
     if (parsedDeliverables.length > 0) {
-      deliverablesHtml = "<ul>" + parsedDeliverables.map(d => `<li>${d}</li>`).join("") + "</ul>";
+      deliverablesHtml = "<ul>" + parsedDeliverables.map(d => {
+        // Decode common HTML entities that might be sent by HubSpot
+        const decodedStr = d
+          .replace(/&#x2122;/gi, '™')
+          .replace(/&trade;/gi, '™')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&#x27;/g, "'");
+        return `<li>${decodedStr}</li>`;
+      }).join("") + "</ul>";
     }
 
     // Read the DOCX file and convert to base64
