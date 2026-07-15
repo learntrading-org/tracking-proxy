@@ -122,10 +122,13 @@ export async function POST(request) {
     if (parsedDeliverables.length > 0) {
       deliverablesHtml = "<ul>" + parsedDeliverables.map(d => {
         // Decode common HTML entities that might be sent by HubSpot
-        const decodedStr = d
+        // Decode &amp; first in case it's double-encoded (e.g. &amp;#x2122;)
+        let decodedStr = d.replace(/&amp;/g, '&');
+        
+        decodedStr = decodedStr
           .replace(/&#x2122;/gi, '™')
+          .replace(/&#8482;/gi, '™')
           .replace(/&trade;/gi, '™')
-          .replace(/&amp;/g, '&')
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&quot;/g, '"')
