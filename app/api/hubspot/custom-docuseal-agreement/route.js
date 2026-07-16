@@ -121,10 +121,17 @@ export async function POST(request) {
     let deliverablesHtml = "";
     if (parsedDeliverables.length > 0) {
       deliverablesHtml = "<ul>" + parsedDeliverables.map(d => {
-        // Decode common HTML entities that might be sent by HubSpot
-        // Decode &amp; first in case it's double-encoded (e.g. &amp;#x2122;)
-        let decodedStr = d.replace(/&amp;/g, '&');
+        let decodedStr = String(d);
         
+        // Decode &amp; completely in case of multiple encodings (e.g. &amp;amp;#x2122;)
+        let prev = "";
+        while (decodedStr !== prev) {
+          prev = decodedStr;
+          decodedStr = decodedStr.replace(/&amp;/gi, '&');
+        }
+        
+        // Replace all HTML entities for the trademark symbol with the actual unicode character '™'.
+        // HubSpot recently started sending these as HTML entities, which DocuSeal doesn't decode natively.
         decodedStr = decodedStr
           .replace(/&#x2122;/gi, '™')
           .replace(/&#8482;/gi, '™')
@@ -134,6 +141,7 @@ export async function POST(request) {
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
           .replace(/&#x27;/g, "'");
+          
         return `<li>${decodedStr}</li>`;
       }).join("") + "</ul>";
     }
