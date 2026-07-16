@@ -24,56 +24,93 @@ export async function POST(req) {
             // Prepare dynamic message content depending on webhook type
             let messageTitle = 'Unknown Whop Event';
             let emoji = '🚨';
-            let infoLine = '';
+            let amountField = '';
+            
+            // Format amounts properly if present
+            const amount = data.amount || 0;
+            const currency = (data.currency || 'USD').toUpperCase();
+            const formattedAmount = `${amount / 100} ${currency}`;
 
             if (webhookData.type === 'payment.succeeded') {
                 messageTitle = 'Whop Payment Succeeded';
                 emoji = '✅';
-                const amount = data.amount || 0;
-                const currency = data.currency || 'USD';
-                infoLine = `*Amount:* ${amount / 100} ${currency.toUpperCase()}`;
+                amountField = `*Amount:*\n${formattedAmount}`;
             } else if (webhookData.type === 'payment.failed') {
                 messageTitle = 'Whop Payment Failed';
                 emoji = '❌';
-                const amount = data.amount || 0;
-                const currency = data.currency || 'USD';
-                infoLine = `*Failed Amount:* ${amount / 100} ${currency.toUpperCase()}`;
+                amountField = `*Failed Amount:*\n${formattedAmount}`;
             } else if (webhookData.type === 'refund.created') {
                 messageTitle = 'Whop Refund Created';
                 emoji = '💸';
-                const amount = data.amount || 0;
-                const currency = data.currency || 'USD';
-                infoLine = `*Refund Amount:* ${amount / 100} ${currency.toUpperCase()}`;
+                amountField = `*Refund Amount:*\n${formattedAmount}`;
             } else if (webhookData.type === 'dispute.created') {
                 messageTitle = 'Whop Dispute Created';
                 emoji = '⚠️';
-                const amount = data.amount || 0;
-                const currency = data.currency || 'USD';
-                infoLine = `*Dispute Amount:* ${amount / 100} ${currency.toUpperCase()}`;
+                amountField = `*Dispute Amount:*\n${formattedAmount}`;
             }
 
-            const customerEmail = data.user?.email || data.email || 'Unknown Email';
-            const customerName = data.user?.username || data.username || 'Unknown Name';
+            const customerEmail = data.user?.email || data.payment?.user?.email || data.customer_email_address || data.email;
+            const customerName = data.user?.username || data.payment?.user?.username || data.customer_name || data.username;
             const resourceId = data.id || 'Unknown ID';
 
-            const message = `
-${emoji} *${messageTitle}* ${emoji}
+            // Build Slack Block Kit fields
+            const fields = [
+                {
+                    type: "mrkdwn",
+                    text: `*Type:*\n${webhookData.type}`
+                },
+                {
+                    type: "mrkdwn",
+                    text: amountField
+                }
+            ];
 
-*Type:* ${webhookData.type}
-${infoLine}
-*Customer:* ${customerName} (${customerEmail})
-*ID:* ${resourceId}
-`;
+            // Only add customer field if we have at least some customer data
+            if (customerName || customerEmail) {
+                const nameStr = customerName || 'Unknown';
+                const emailStr = customerEmail ? `(${customerEmail})` : '';
+                fields.push({
+                    type: "mrkdwn",
+                    text: `*Customer:*\n${nameStr} ${emailStr}`
+                });
+            }
 
-            if (process.env.SLACK_PAYMENT_ALERTS_WEBHOOK_URL) {
-                await fetch(process.env.SLACK_PAYMENT_ALERTS_WEBHOOK_URL, {
+            fields.push({
+                type: "mrkdwn",
+                text: `*ID:*\n\`${resourceId}\``
+            });
+
+            // Create the Block Kit payload
+            const slackPayload = {
+                text: `${emoji} ${messageTitle}`, // Fallback text for notifications
+                blocks: [
+                    {
+                        type: "header",
+                        text: {
+                            type: "plain_text",
+                            text: `${emoji} ${messageTitle}`,
+                            emoji: true
+                        }
+                    },
+                    {
+                        type: "section",
+                        fields: fields
+                    },
+                    {
+                        type: "divider"
+                    }
+                ]
+            };
+
+            if (process.env.SLACK_WEBHOOK_URL) {
+                await fetch(process.env.SLACK_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: message }),
+                    body: JSON.stringify(slackPayload),
                 });
                 console.log(`Slack alert sent for Whop ${webhookData.type}.`);
             } else {
-                console.error('SLACK_PAYMENT_ALERTS_WEBHOOK_URL is not defined');
+                console.error('SLACK_WEBHOOK_URL is not defined');
             }
         }
 
