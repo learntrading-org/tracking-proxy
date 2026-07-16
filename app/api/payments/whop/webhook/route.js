@@ -25,7 +25,7 @@ export async function POST(req) {
             let messageTitle = 'Unknown Whop Event';
             let emoji = '🚨';
             let amountField = '';
-            
+
             // Format amounts properly if present
             const amount = data.amount || 0;
             const currency = (data.currency || 'USD').toUpperCase();
@@ -102,15 +102,15 @@ export async function POST(req) {
                 ]
             };
 
-            if (process.env.SLACK_WEBHOOK_URL) {
-                await fetch(process.env.SLACK_WEBHOOK_URL, {
+            if (process.env.SLACK_PAYMENT_ALERTS_WEBHOOK_URL) {
+                await fetch(process.env.SLACK_PAYMENT_ALERTS_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(slackPayload),
                 });
                 console.log(`Slack alert sent for Whop ${webhookData.type}.`);
             } else {
-                console.error('SLACK_WEBHOOK_URL is not defined');
+                console.error('SLACK_PAYMENT_ALERTS_WEBHOOK_URL is not defined');
             }
         }
 
