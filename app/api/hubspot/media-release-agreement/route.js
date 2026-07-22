@@ -53,7 +53,7 @@ export async function POST(request) {
       send_email: true,
       message: {
         subject: 'eSignature request for "Media Release Form Agreement"',
-        body: "Hi there, \n\nYour Media Release Form Agreement has been sent for your eSignature. Please click the link below to review and sign the document:\n{{submitter.link}} \n\nIf you have any questions, feel free to contact us.\n\nThank you",
+        body: "Hi there, \n\nYour Media Release Form Agreement has been sent for your eSignature. Please click the link below to review and sign the document:\n{{submitter.link}} \n\nIf you have any questions, feel free to contact us at hello@bullmania.com.\n\nThank you",
       },
     };
 
