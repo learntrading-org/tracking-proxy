@@ -315,6 +315,14 @@ export async function POST(request) {
       // We use 'await' to ensure this call completes before the function finishes,
       // but we don't need to block the *next* logic block.
       await addTagToUser(inviteeEmail, tagId, apiSecret);
+
+      if (slug.includes("quiz-review")) {
+        const quizReviewTagId = 21420127;
+        console.log(
+          `Event "${slug}" is a quiz review. Attempting to add extra tag ${quizReviewTagId} to ${inviteeEmail}.`
+        );
+        await addTagToUser(inviteeEmail, quizReviewTagId, apiSecret);
+      }
     } else {
       console.log(
         `Received event type "${slug}", which is not a strategy session. No action for this block.`
