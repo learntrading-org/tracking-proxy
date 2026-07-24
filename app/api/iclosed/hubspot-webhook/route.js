@@ -100,6 +100,105 @@ async function updateHubSpotContact(contactId, properties, token) {
   return await response.json();
 }
 
+/**
+ * Check if a subscriber exists in ConvertKit
+ */
+async function checkConvertKitSubscriber(email, apiSecret) {
+  try {
+    const response = await fetch(
+      `https://api.convertkit.com/v3/subscribers?api_secret=${apiSecret}&email_address=${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      }
+    );
+    if (!response.ok) {
+      console.error(`ConvertKit subscriber check failed: ${response.status}`);
+      return null;
+    }
+    const data = await response.json();
+    const subscribers = data.subscribers || [];
+    if (subscribers.length > 0) {
+      return subscribers[0].id;
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error checking ConvertKit subscriber existence: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Update an existing subscriber in ConvertKit
+ */
+async function updateConvertKitSubscriber(subscriberId, data, apiSecret) {
+  try {
+    const payload = {
+      api_secret: apiSecret,
+      first_name: data.first_name,
+      fields: data.fields
+    };
+
+    const response = await fetch(
+      `https://api.convertkit.com/v3/subscribers/${subscriberId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(`ConvertKit subscriber update failed:`, errorData);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`Error updating ConvertKit subscriber: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * Create a new subscriber in ConvertKit using a Tag ID
+ */
+async function createConvertKitSubscriber(email, data, apiSecret, tagId) {
+  try {
+    const payload = {
+      api_secret: apiSecret,
+      email: email,
+      first_name: data.first_name,
+      fields: data.fields
+    };
+
+    const response = await fetch(
+      `https://api.convertkit.com/v3/tags/${tagId}/subscribe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(`ConvertKit subscriber create failed for tag ${tagId}:`, errorData);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`Error creating ConvertKit subscriber: ${error.message}`);
+    return false;
+  }
+}
+
 // Handle webhook request
 export async function POST(request) {
   try {
@@ -253,8 +352,41 @@ export async function POST(request) {
       console.log(`Successfully created contact ${email} in HubSpot with ID: ${newContact.id}.`);
     }
 
+    // Step 2: Sync with ConvertKit
+    const ckApiSecret = process.env.CONVERTKIT_API_SECRET;
+    if (!ckApiSecret) {
+      console.warn("CONVERTKIT_API_SECRET environment variable is missing. Skipping ConvertKit sync.");
+    } else {
+      const ckData = {
+        first_name: firstName,
+        fields: {}
+      };
+      
+      if (lastName) ckData.fields.last_name = lastName;
+      if (phone) ckData.fields.phone = phone;
+      if (utmCampaign) ckData.fields.utm_campaign = utmCampaign;
+      if (utmContent) ckData.fields.utm_content = utmContent;
+      if (utmMedium) ckData.fields.utm_medium = utmMedium;
+      if (utmSource) ckData.fields.utm_source = utmSource;
+
+      const ckTagId = "21447623"; // "From iClosed"
+      
+      console.log(`Checking if contact exists in ConvertKit: ${email}`);
+      const subscriberId = await checkConvertKitSubscriber(email, ckApiSecret);
+      
+      if (subscriberId) {
+        console.log(`Contact found in ConvertKit with ID: ${subscriberId}. Updating...`);
+        await updateConvertKitSubscriber(subscriberId, ckData, ckApiSecret);
+        console.log(`Successfully updated contact ${email} in ConvertKit.`);
+      } else {
+        console.log(`Contact ${email} not found in ConvertKit. Creating new contact...`);
+        await createConvertKitSubscriber(email, ckData, ckApiSecret, ckTagId);
+        console.log(`Successfully created contact ${email} in ConvertKit.`);
+      }
+    }
+
     return NextResponse.json(
-      { success: true, message: "HubSpot contact sync completed successfully." },
+      { success: true, message: "HubSpot and ConvertKit contact sync completed successfully." },
       { status: 200, headers: { "Access-Control-Allow-Origin": "*" } }
     );
   } catch (error) {
