@@ -135,10 +135,11 @@ Webhook received (payload[0])
 │
 ├─ No ConvertKit secret? ──────────────────────► stop (200)
 │
-├─ [B] Strategy / quiz-review ConvertKit tag  (by event slug)
+├─ [B] Strategy / quiz-review / cycle-review ConvertKit tag  (by event slug)
+│     └─ quiz-review also gets an extra ConvertKit tag
 │
 └─ [C] Assignee ConvertKit tags
-       ├─ [C1] Mechanical Rules / Strategy Call / Quiz Review assignees
+       ├─ [C1] Mechanical Rules / Strategy Call / Quiz Review / Cycle Review assignees
        └─ [C2] Discovery call assignees
 ```
 
@@ -182,7 +183,7 @@ Phone sources (first available): `invitee.text_notification_phone` → `invitee.
 
 ---
 
-##### [B] Strategy / quiz-review ConvertKit tag (event slug)
+##### [B] Strategy / quiz-review / cycle-review ConvertKit tags (event slug)
 
 **Field monitored:** `event_type.slug`
 
@@ -190,16 +191,21 @@ Phone sources (first available): `invitee.text_notification_phone` → `invitee.
 |-----------|--------|
 | slug **includes** `mechanical-rules-strategy` | ConvertKit tag `11470881` |
 | slug **includes** `strategy-call` | ConvertKit tag `11470881` |
-| slug **includes** `quiz-review` | ConvertKit tag `11470881` |
+| slug **includes** `quiz-review` | ConvertKit tags `11470881` **and** `21420127` |
+| slug **includes** `bullmania-cycle-review-session` | ConvertKit tag `11470881` |
 | None of the above | Skip this block |
 
 ```text
 slug includes "mechanical-rules-strategy"
   OR "strategy-call"
   OR "quiz-review"
+  OR "bullmania-cycle-review-session"
   YES → tag 11470881
-  NO  → no strategy/quiz-review tag
+         if also "quiz-review" → extra tag 21420127
+  NO  → no strategy/quiz/cycle-review slug tags
 ```
+
+> **Quiz review:** matching `quiz-review` always applies the shared strategy tag `11470881` plus the dedicated quiz-review tag `21420127`.
 
 ---
 
@@ -216,7 +222,7 @@ If no assignee email can be resolved → skip all assignee logic.
 
 ---
 
-##### [C1] Mechanical Rules / Strategy Call / Quiz Review assignees
+##### [C1] Mechanical Rules / Strategy Call / Quiz Review / Cycle Review assignees
 
 **Event name filter (`event_type.name`, case-insensitive):**
 
@@ -232,6 +238,10 @@ OR
 OR
 (
   name includes "quiz review"
+)
+OR
+(
+  name includes "bullmania cycle review session"
 )
 ```
 
@@ -251,9 +261,10 @@ Examples:
 | Mechanical Rules Review | No | includes “mechanical rules” **and** “review” → excluded |
 | Strategy Call with James | Yes | includes “strategy call” |
 | Quiz Review | Yes | includes “quiz review” (explicit allow) |
+| Bullmania Cycle Review Session | Yes | includes “bullmania cycle review session” (explicit allow) |
 | Discovery Call | No (for C1) | handled in C2 only |
 
-> **Note:** “Mechanical Rules Review” is still excluded by the `mechanical rules` + `not review` rule. “Quiz Review” is allowed via its own `quiz review` branch.
+> **Note:** “Mechanical Rules Review” is still excluded by the `mechanical rules` + `not review` rule. “Quiz Review” and “Bullmania Cycle Review Session” are allowed via their own name branches.
 
 ---
 
@@ -275,13 +286,14 @@ C1 and C2 are independent: a name that matched C1 can also match C2 if it includ
 
 | Tag ID | Applied when |
 |--------|--------------|
-| `11470881` | `event_type.slug` contains `mechanical-rules-strategy` **or** `strategy-call` **or** `quiz-review` |
-| `11873105` | Event name is Mechanical Rules (not Review), Strategy Call, **or** Quiz Review, **and** assignee is James |
+| `11470881` | `event_type.slug` contains `mechanical-rules-strategy` **or** `strategy-call` **or** `quiz-review` **or** `bullmania-cycle-review-session` |
+| `21420127` | `event_type.slug` contains `quiz-review` (applied **in addition to** `11470881`) |
+| `11873105` | Event name is Mechanical Rules (not Review), Strategy Call, Quiz Review, **or** Bullmania Cycle Review Session, **and** assignee is James |
 | `11873106` | Same event filter, assignee is Phil |
 | `12824071` | Same event filter, assignee is Cailum |
 | `20825718` | Event name contains `discovery`, assignee is Jeremy |
 
-Multiple tags can apply on a single booking (e.g. strategy/quiz-review slug tag + assignee tag).
+Multiple tags can apply on a single booking (e.g. strategy slug tag + quiz-review extra tag + assignee tag).
 
 ---
 
@@ -921,8 +933,11 @@ Call booked (iClosed)
   → /api/iclosed/webhook
       IF invitee email present:
         → Intercom: tag if user replied to bot (WA vs Email channel)
-        → ConvertKit: IF slug matches strategy / strategy-call / quiz-review → tag 11470881
+        → ConvertKit: IF slug matches strategy / strategy-call / quiz-review / bullmania-cycle-review-session
+              → tag 11470881
+              IF also quiz-review → extra tag 21420127
         → ConvertKit: IF event name = MR (not review) OR strategy call OR quiz review
+              OR bullmania cycle review session
               AND assignee James/Phil/Cailum → assignee tags
         → ConvertKit: IF event name includes "discovery"
               AND assignee Jeremy → discovery tag
