@@ -135,11 +135,11 @@ Webhook received (payload[0])
 │
 ├─ No ConvertKit secret? ──────────────────────► stop (200)
 │
-├─ [B] Strategy / quiz-review / cycle-review ConvertKit tag  (by event slug)
+├─ [B] Strategy / quiz-review / cycle-review / invitation ConvertKit tag  (by event slug)
 │     └─ quiz-review also gets an extra ConvertKit tag
 │
 └─ [C] Assignee ConvertKit tags
-       ├─ [C1] Mechanical Rules / Strategy Call / Quiz Review / Cycle Review assignees
+       ├─ [C1] Mechanical Rules / Strategy Call / Quiz Review / Cycle Review / Invitation assignees
        └─ [C2] Discovery call assignees
 ```
 
@@ -193,6 +193,7 @@ Phone sources (first available): `invitee.text_notification_phone` → `invitee.
 | slug **includes** `strategy-call` | ConvertKit tag `11470881` |
 | slug **includes** `quiz-review` | ConvertKit tags `11470881` **and** `21420127` |
 | slug **includes** `bullmania-cycle-review-session` | ConvertKit tag `11470881` |
+| slug **includes** `bullmania-invitation-ai-included-deal` | ConvertKit tag `11470881` |
 | None of the above | Skip this block |
 
 ```text
@@ -200,6 +201,7 @@ slug includes "mechanical-rules-strategy"
   OR "strategy-call"
   OR "quiz-review"
   OR "bullmania-cycle-review-session"
+  OR "bullmania-invitation-ai-included-deal"
   YES → tag 11470881
          if also "quiz-review" → extra tag 21420127
   NO  → no strategy/quiz/cycle-review slug tags
@@ -222,7 +224,7 @@ If no assignee email can be resolved → skip all assignee logic.
 
 ---
 
-##### [C1] Mechanical Rules / Strategy Call / Quiz Review / Cycle Review assignees
+##### [C1] Mechanical Rules / Strategy Call / Quiz Review / Cycle Review / Bullmania Invitation assignees
 
 **Event name filter (`event_type.name`, case-insensitive):**
 
@@ -243,6 +245,10 @@ OR
 (
   name includes "bullmania cycle review session"
 )
+OR
+(
+  name includes "bullmania invitation"
+)
 ```
 
 | Passes filter? | Assignee email | ConvertKit tag |
@@ -262,6 +268,7 @@ Examples:
 | Strategy Call with James | Yes | includes “strategy call” |
 | Quiz Review | Yes | includes “quiz review” (explicit allow) |
 | Bullmania Cycle Review Session | Yes | includes “bullmania cycle review session” (explicit allow) |
+| Bullmania Invitation (AI Included Deal) | Yes | includes “bullmania invitation” |
 | Discovery Call | No (for C1) | handled in C2 only |
 
 > **Note:** “Mechanical Rules Review” is still excluded by the `mechanical rules` + `not review` rule. “Quiz Review” and “Bullmania Cycle Review Session” are allowed via their own name branches.
@@ -286,9 +293,9 @@ C1 and C2 are independent: a name that matched C1 can also match C2 if it includ
 
 | Tag ID | Applied when |
 |--------|--------------|
-| `11470881` | `event_type.slug` contains `mechanical-rules-strategy` **or** `strategy-call` **or** `quiz-review` **or** `bullmania-cycle-review-session` |
+| `11470881` | `event_type.slug` contains `mechanical-rules-strategy`, `strategy-call`, `quiz-review`, `bullmania-cycle-review-session`, **or** `bullmania-invitation-ai-included-deal` |
 | `21420127` | `event_type.slug` contains `quiz-review` (applied **in addition to** `11470881`) |
-| `11873105` | Event name is Mechanical Rules (not Review), Strategy Call, Quiz Review, **or** Bullmania Cycle Review Session, **and** assignee is James |
+| `11873105` | Event name is Mechanical Rules (not Review), Strategy Call, Quiz Review, Bullmania Cycle Review Session, **or** Bullmania Invitation, **and** assignee is James |
 | `11873106` | Same event filter, assignee is Phil |
 | `12824071` | Same event filter, assignee is Cailum |
 | `20825718` | Event name contains `discovery`, assignee is Jeremy |
