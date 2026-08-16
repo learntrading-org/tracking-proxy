@@ -256,6 +256,7 @@ OR
 | Yes | `james@bullmania.com` | `11873105` |
 | Yes | `phil@bullmania.com` | `11873106` |
 | Yes | `cailum@bullmania.com` | `12824071` |
+| Yes | `ryan@bullmania.com` | `22498075` |
 | Yes | Any other email | No tag |
 | No (e.g. “Mechanical Rules Review”) | — | Skip this block |
 
@@ -298,6 +299,7 @@ C1 and C2 are independent: a name that matched C1 can also match C2 if it includ
 | `11873105` | Event name is Mechanical Rules (not Review), Strategy Call, Quiz Review, Bullmania Cycle Review Session, **or** Bullmania Invitation, **and** assignee is James |
 | `11873106` | Same event filter, assignee is Phil |
 | `12824071` | Same event filter, assignee is Cailum |
+| `22498075` | Same event filter, assignee is Ryan |
 | `20825718` | Event name contains `discovery`, assignee is Jeremy |
 
 Multiple tags can apply on a single booking (e.g. strategy slug tag + quiz-review extra tag + assignee tag).
