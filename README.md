@@ -1,5 +1,6 @@
 # Tracking Proxy — API Automations
 
+RANDOM TEXT
 Next.js app that powers Bullmania’s integration automations. Most endpoints under `app/api` are called by **HubSpot workflows**, **iClosed webhooks**, **DocuSeal webhooks**, **payment providers**, or frontend tracking scripts. They glue together HubSpot, ConvertKit (Kit), Intercom, DocuSeal, ThriveCart, Slack, Wistia, Stripe, and Whop.
 
 ---
