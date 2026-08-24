@@ -815,7 +815,7 @@ Payment-provider webhooks under `app/api/payments`. Both post alerts to the same
 
 #### `POST /api/payments/stripe/webhook`
 
-Stripe webhook. Verifies signature, then alerts Slack on successful payments, subscription renewals, failed payments, and cancellations.
+Stripe webhook. Verifies signature, then alerts Slack exclusively on successful payments matching the amount $2,364.00 (236,400 cents).
 
 **Entry conditions**
 
@@ -824,28 +824,25 @@ Stripe webhook. Verifies signature, then alerts Slack on successful payments, su
 | Invalid / missing Stripe signature | `400` Webhook Error |
 | Valid event | Continue |
 | Event type **not** in monitored list | Return `200` (no Slack) |
+| Amount **not** equal to 236400 cents ($2,364.00) | Return `200` (no Slack) |
 
 **Events monitored**
 
 | `event.type` | Action |
 |--------------|--------|
-| `checkout.session.completed` | Slack checkout succeeded alert (one-off / subscription) |
-| `invoice.payment_succeeded` | Slack payment / subscription renewal succeeded alert |
-| `invoice.payment_failed` | Slack payment failed alert |
-| `payment_intent.succeeded` | Slack direct payment succeeded alert (non-invoice) |
-| `payment_intent.payment_failed` | Slack direct payment failed alert (non-invoice) |
-| `customer.subscription.deleted` | Slack subscription canceled alert |
-| Any other Stripe event | Acknowledged (`200`), no alert |
+| `checkout.session.completed` | Slack checkout succeeded alert (if amount matches) |
+| `invoice.payment_succeeded` | Slack payment / subscription renewal succeeded alert (if amount matches) |
+| `payment_intent.succeeded` | Slack direct payment succeeded alert (non-invoice, if amount matches) |
+| Any other Stripe event / amount mismatch | Acknowledged (`200`), no alert |
 
 **Alert content (Slack Block Kit)**
 
 | Field | Source |
 |-------|--------|
 | Type | `event.type` |
-| Amount | formatted amount + currency (e.g. `100.00 USD`) |
+| Amount | formatted amount + currency (e.g. `2364.00 USD`) |
 | Customer | customer name and/or email |
 | Subscription / Product | resolved product/plan/subscription name |
-| Error | failure reason (if applicable) |
 | ID | object `id` |
 
 ```text
@@ -853,7 +850,7 @@ Stripe webhook
 │
 ├─ Signature invalid ──────────────────────────► 400
 │
-├─ type in monitored list
+├─ type in monitored list AND amount === 236400
 │     YES → post Slack Block Kit alert (requires SLACK_PAYMENT_ALERTS_WEBHOOK_URL)
 │     NO  → no-op
 │

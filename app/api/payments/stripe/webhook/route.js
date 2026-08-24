@@ -161,10 +161,10 @@ export async function POST(req) {
     const monitoredEvents = [
         'checkout.session.completed',
         'invoice.payment_succeeded',
-        'invoice.payment_failed',
+        // 'invoice.payment_failed',
         'payment_intent.succeeded',
-        'payment_intent.payment_failed',
-        'customer.subscription.deleted',
+        // 'payment_intent.payment_failed',
+        // 'customer.subscription.deleted',
     ];
 
     if (!monitoredEvents.includes(event.type)) {
@@ -174,26 +174,21 @@ export async function POST(req) {
     const data = event.data.object;
 
     // Avoid duplicate alerts: if payment_intent belongs to an invoice, let invoice.* events handle it
-    if (
-        (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.payment_failed') &&
-        data.invoice
-    ) {
+    if (event.type === 'payment_intent.succeeded' && data.invoice) {
         return new Response('Skipped (handled by invoice event)', { status: 200 });
     }
 
     // Determine message attributes based on event
     let messageTitle = 'Stripe Event';
-    let emoji = '🔔';
+    let emoji = '✅';
     let rawAmount = null;
     let currency = data.currency || 'usd';
-    let failureMessage = null;
 
     if (event.type === 'checkout.session.completed') {
         messageTitle =
             data.mode === 'subscription'
                 ? 'Stripe Subscription Checkout Succeeded'
                 : 'Stripe Checkout Succeeded';
-        emoji = '✅';
         rawAmount = data.amount_total;
     } else if (event.type === 'invoice.payment_succeeded') {
         const isSubscription = Boolean(data.subscription);
@@ -203,28 +198,16 @@ export async function POST(req) {
             : isSubscription
             ? 'Stripe Subscription Payment Succeeded'
             : 'Stripe Invoice Payment Succeeded';
-        emoji = '✅';
         rawAmount = data.amount_paid ?? data.total ?? data.amount_due;
-    } else if (event.type === 'invoice.payment_failed') {
-        const isSubscription = Boolean(data.subscription);
-        messageTitle = isSubscription
-            ? 'Stripe Subscription Payment Failed'
-            : 'Stripe Invoice Payment Failed';
-        emoji = '❌';
-        rawAmount = data.amount_due ?? data.total;
-        failureMessage = data.last_payment_error?.message || 'Invoice payment failed';
     } else if (event.type === 'payment_intent.succeeded') {
         messageTitle = 'Stripe Payment Succeeded';
-        emoji = '✅';
         rawAmount = data.amount_received ?? data.amount;
-    } else if (event.type === 'payment_intent.payment_failed') {
-        messageTitle = 'Stripe Payment Failed';
-        emoji = '❌';
-        rawAmount = data.amount;
-        failureMessage = data.last_payment_error?.message || 'Payment intent failed';
-    } else if (event.type === 'customer.subscription.deleted') {
-        messageTitle = 'Stripe Subscription Canceled';
-        emoji = '⚠️';
+    }
+
+    // Only alert for successful payments with amount 2364 ($2,364.00 = 236400 cents)
+    const TARGET_AMOUNT_CENTS = 236400;
+    if (rawAmount !== TARGET_AMOUNT_CENTS) {
+        return new Response('Event ignored (amount does not match 2364)', { status: 200 });
     }
 
     // Format Amount
@@ -265,13 +248,6 @@ export async function POST(req) {
         fields.push({
             type: 'mrkdwn',
             text: `*Subscription / Product:*\n${subscriptionName}`,
-        });
-    }
-
-    if (failureMessage) {
-        fields.push({
-            type: 'mrkdwn',
-            text: `*Error:*\n${failureMessage}`,
         });
     }
 
