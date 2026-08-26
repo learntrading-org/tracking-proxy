@@ -196,18 +196,19 @@ export async function POST(req) {
         messageTitle = isRenewal
             ? 'Stripe Subscription Renewal Succeeded'
             : isSubscription
-            ? 'Stripe Subscription Payment Succeeded'
-            : 'Stripe Invoice Payment Succeeded';
+                ? 'Stripe Subscription Payment Succeeded'
+                : 'Stripe Invoice Payment Succeeded';
         rawAmount = data.amount_paid ?? data.total ?? data.amount_due;
     } else if (event.type === 'payment_intent.succeeded') {
         messageTitle = 'Stripe Payment Succeeded';
         rawAmount = data.amount_received ?? data.amount;
     }
 
-    // Only alert for successful payments with amount 2364 ($2,364.00 = 236400 cents)
-    const TARGET_AMOUNT_CENTS = 236400;
-    if (rawAmount !== TARGET_AMOUNT_CENTS) {
-        return new Response('Event ignored (amount does not match 2364)', { status: 200 });
+    // Only alert for successful payments matching allowed amounts (in cents):
+    // $1,164.00, $1,497.00, $1,968.00, $2,364.00, $2,497.00
+    const TARGET_AMOUNTS_CENTS = [116400, 149700, 196800, 236400, 249700];
+    if (!TARGET_AMOUNTS_CENTS.includes(rawAmount)) {
+        return new Response('Event ignored (amount does not match allowed prices)', { status: 200 });
     }
 
     // Format Amount

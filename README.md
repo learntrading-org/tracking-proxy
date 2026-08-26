@@ -815,7 +815,7 @@ Payment-provider webhooks under `app/api/payments`. Both post alerts to the same
 
 #### `POST /api/payments/stripe/webhook`
 
-Stripe webhook. Verifies signature, then alerts Slack exclusively on successful payments matching the amount $2,364.00 (236,400 cents).
+Stripe webhook. Verifies signature, then alerts Slack exclusively on successful payments matching the allowed amounts: $1,164.00, $1,497.00, $1,968.00, $2,364.00, or $2,497.00.
 
 **Entry conditions**
 
@@ -824,7 +824,7 @@ Stripe webhook. Verifies signature, then alerts Slack exclusively on successful 
 | Invalid / missing Stripe signature | `400` Webhook Error |
 | Valid event | Continue |
 | Event type **not** in monitored list | Return `200` (no Slack) |
-| Amount **not** equal to 236400 cents ($2,364.00) | Return `200` (no Slack) |
+| Amount **not** in allowed list (116400, 149700, 196800, 236400, 249700 cents) | Return `200` (no Slack) |
 
 **Events monitored**
 
@@ -850,7 +850,7 @@ Stripe webhook
 │
 ├─ Signature invalid ──────────────────────────► 400
 │
-├─ type in monitored list AND amount === 236400
+├─ type in monitored list AND amount in allowed list
 │     YES → post Slack Block Kit alert (requires SLACK_PAYMENT_ALERTS_WEBHOOK_URL)
 │     NO  → no-op
 │
