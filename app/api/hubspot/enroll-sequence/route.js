@@ -1,6 +1,9 @@
 // app/api/hubspot/enroll-sequence/route.js
 import { NextResponse } from "next/server";
 
+// Default Bullmania HubSpot User ID (hubspot@bullmania.com)
+const DEFAULT_HUBSPOT_USER_ID = "84285656";
+
 // Handle CORS preflight requests
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -228,15 +231,21 @@ export async function POST(request) {
       );
     }
 
+    // 5. Determine userId required by Sequences API query param
+    const userId =
+      process.env.HUBSPOT_USER_ID ||
+      payload.origin?.userId ||
+      DEFAULT_HUBSPOT_USER_ID;
+
     const stringContactId = String(contactId);
     const stringSequenceId = String(sequenceId);
 
     console.log(
-      `Initiating sequence enrollment: contactId=${stringContactId}, sequenceId=${stringSequenceId}, senderEmail=${senderEmail}`
+      `Initiating sequence enrollment: contactId=${stringContactId}, sequenceId=${stringSequenceId}, senderEmail=${senderEmail}, userId=${userId}`
     );
 
-    // Call HubSpot Sequences API
-    const enrollUrl = "https://api.hubapi.com/automation/sequences/2026-03/enrollments";
+    // Call HubSpot Sequences API with userId query parameter
+    const enrollUrl = `https://api.hubapi.com/automation/sequences/2026-03/enrollments?userId=${encodeURIComponent(userId)}`;
     const enrollResponse = await fetch(enrollUrl, {
       method: "POST",
       headers: {
