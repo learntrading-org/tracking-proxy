@@ -22,7 +22,7 @@ export async function POST(request) {
     const payload = await request.json();
 
     const { fields = {} } = payload;
-    
+
     console.log("HubSpot Payload Fields:", JSON.stringify(fields, null, 2));
 
     // Helper for case-insensitive extraction
@@ -38,7 +38,7 @@ export async function POST(request) {
     const email = getField(['email']);
     const firstName = getField(['firstName', 'first_name']);
     const lastName = getField(['lastName', 'last_name']);
-    
+
     // Extract new custom fields (HubSpot internal names are often snake_case)
     const programFeeRaw = getField(['PROGRAM_FEE', 'programFee', 'program_fee']);
     const endDateRaw = getField(['END_DATE', 'endDate', 'end_date']);
@@ -49,8 +49,8 @@ export async function POST(request) {
     if (formattedFee) {
       const numericFee = parseFloat(String(formattedFee).replace(/[^\d.-]/g, ''));
       if (!isNaN(numericFee)) {
-        formattedFee = new Intl.NumberFormat('en-US', { 
-          style: 'currency', 
+        formattedFee = new Intl.NumberFormat('en-US', {
+          style: 'currency',
           currency: 'USD',
           minimumFractionDigits: 0,
           maximumFractionDigits: 2
@@ -64,7 +64,7 @@ export async function POST(request) {
       const isNumericTimestamp = !isNaN(Number(formattedDate)) && String(formattedDate).trim() !== '';
       const timestamp = isNumericTimestamp ? Number(formattedDate) : formattedDate;
       const dateObj = new Date(timestamp);
-      
+
       if (!isNaN(dateObj.getTime())) {
         formattedDate = new Intl.DateTimeFormat('en-US', {
           month: 'long',
@@ -103,7 +103,7 @@ export async function POST(request) {
         },
       ];
     }
-    
+
     // Handle programDeliverables which should be an array of strings
     let parsedDeliverables = [];
     if (Array.isArray(programDeliverables)) {
@@ -122,14 +122,14 @@ export async function POST(request) {
     if (parsedDeliverables.length > 0) {
       deliverablesHtml = "<ul>" + parsedDeliverables.map(d => {
         let decodedStr = String(d);
-        
+
         // Decode &amp; completely in case of multiple encodings (e.g. &amp;amp;#x2122;)
         let prev = "";
         while (decodedStr !== prev) {
           prev = decodedStr;
           decodedStr = decodedStr.replace(/&amp;/gi, '&');
         }
-        
+
         // Replace all HTML entities for the trademark symbol with the actual unicode character '™'.
         // HubSpot recently started sending these as HTML entities, which DocuSeal doesn't decode natively.
         decodedStr = decodedStr
@@ -141,7 +141,7 @@ export async function POST(request) {
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
           .replace(/&#x27;/g, "'");
-          
+
         return `<li>${decodedStr}</li>`;
       }).join("") + "</ul>";
     }
@@ -166,7 +166,7 @@ export async function POST(request) {
       },
       send_email: true,
       message: {
-        subject: 'eSignature request for "BULLMANIA PLATINUM AGREEMENT"',
+        subject: 'eSignature request for "BULLMANIA AGREEMENT"',
         body: "Hi there, \n\nWelcome to Bullmania, and thank you for joining us! \n\nYour agreement has been sent for your eSignature. Please click the link below to review and sign the document:\n{{submitter.link}} \n\nIf your subscription includes 1-on-1 coaching, our team will reach out shortly to schedule your first session.\n\nIf you have any questions, feel free to contact us at hello@bullmania.com.\n\nThank you and welcome aboard,\nThe Bullmania Team",
       },
     };
