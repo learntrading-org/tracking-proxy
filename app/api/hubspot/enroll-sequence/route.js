@@ -20,28 +20,31 @@ export async function POST(request) {
     const payload = await request.json();
     console.log("Received HubSpot sequence enrollment webhook payload:", JSON.stringify(payload, null, 2));
 
-    const { object, fields = {}, inputFields = {}, properties = {} } = payload;
+    const fields = payload.fields || {};
+    const inputFields = payload.inputFields || {};
+    const typedInputs = payload.typedInputs || {};
+    const properties = payload.properties || {};
+    const object = payload.object || {};
 
-    // Extract contact ID from payload with fallbacks
-    let contactId =
-      object?.objectId ||
-      payload.objectId ||
-      payload.contactId ||
-      fields.contactId ||
-      inputFields.contactId;
-
-    // Extract email from fields or root
-    const email = fields.email || inputFields.email || payload.email || properties.email;
-
-    // Extract sequence ID from fields or root
-    const sequenceId = fields.sequenceId || inputFields.sequenceId || payload.sequenceId;
-
-    // Extract sender email (fallback to default if empty or blank)
-    const rawSenderEmail = fields.senderEmail || inputFields.senderEmail || payload.senderEmail;
-    const senderEmail =
-      rawSenderEmail && typeof rawSenderEmail === "string" && rawSenderEmail.trim() !== ""
-        ? rawSenderEmail.trim()
-        : "hello@bullmania.com";
+    // Helper to extract value across different HubSpot payload formats
+    const getInputValue = (key) => {
+      if (fields[key] !== undefined && fields[key] !== null && String(fields[key]).trim() !== "") {
+        return fields[key];
+      }
+      if (inputFields[key] !== undefined && inputFields[key] !== null && String(inputFields[key]).trim() !== "") {
+        return inputFields[key];
+      }
+      if (typedInputs[key]?.value !== undefined && typedInputs[key]?.value !== null && String(typedInputs[key]?.value).trim() !== "") {
+        return typedInputs[key].value;
+      }
+      if (properties[key] !== undefined && properties[key] !== null && String(properties[key]).trim() !== "") {
+        return properties[key];
+      }
+      if (payload[key] !== undefined && payload[key] !== null && String(payload[key]).trim() !== "") {
+        return payload[key];
+      }
+      return undefined;
+    };
 
     const token = process.env.HUBSPOT_ACCESS_TOKEN;
     if (!token) {
@@ -63,9 +66,42 @@ export async function POST(request) {
       );
     }
 
-    // If contactId is not present, attempt to look it up via HubSpot Search API using email
+    const rawObjectType = String(object.objectType || object.objectTypeId || "").toUpperCase();
+    const isExplicitContactObject =
+      rawObjectType === "CONTACT" ||
+      rawObjectType === "0-1" ||
+      rawObjectType === "1";
+
+    const isExplicitTicketObject =
+      rawObjectType === "TICKET" ||
+      rawObjectType === "0-5" ||
+      rawObjectType === "5";
+
+    const isExplicitDealObject =
+      rawObjectType === "DEAL" ||
+      rawObjectType === "0-3" ||
+      rawObjectType === "3";
+
+    // 1. Determine contactId
+    let contactId = getInputValue("contactId") || getInputValue("contact_id");
+
+    // If the workflow object is specifically a Contact, object.objectId is the contactId
+    if (!contactId && isExplicitContactObject && object.objectId) {
+      contactId = object.objectId;
+    }
+
+    // 2. Extract email, sequenceId, and senderEmail
+    const email = getInputValue("email");
+    const sequenceId = getInputValue("sequenceId") || getInputValue("sequence_id");
+    const rawSenderEmail = getInputValue("senderEmail") || getInputValue("sender_email");
+    const senderEmail =
+      rawSenderEmail && typeof rawSenderEmail === "string" && rawSenderEmail.trim() !== ""
+        ? rawSenderEmail.trim()
+        : "hello@bullmania.com";
+
+    // 3. If contactId is not yet resolved, search HubSpot by email
     if (!contactId && email && typeof email === "string" && email.trim() !== "") {
-      console.log(`contactId not found in payload, searching HubSpot for contact by email: ${email.trim()}`);
+      console.log(`contactId not found in payload (objectType: ${rawObjectType || "unknown"}), searching HubSpot contact by email: ${email.trim()}`);
       try {
         const searchUrl = "https://api.hubapi.com/crm/v3/objects/contacts/search";
         const searchResponse = await fetch(searchUrl, {
@@ -104,6 +140,48 @@ export async function POST(request) {
         }
       } catch (searchError) {
         console.error("Error executing HubSpot contact search:", searchError);
+      }
+    }
+
+    // 4. If contactId is still not found and object is Ticket/Deal, check associations
+    if (!contactId && object.objectId) {
+      if (isExplicitTicketObject) {
+        console.log(`Attempting to find contact associated with Ticket ID ${object.objectId}`);
+        try {
+          const assocUrl = `https://api.hubapi.com/crm/v3/objects/tickets/${object.objectId}/associations/contacts`;
+          const assocResponse = await fetch(assocUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (assocResponse.ok) {
+            const assocData = await assocResponse.json();
+            if (assocData.results && assocData.results.length > 0) {
+              contactId = assocData.results[0].id;
+              console.log(`Found associated contactId ${contactId} from Ticket ${object.objectId}`);
+            }
+          }
+        } catch (assocError) {
+          console.error("Error fetching ticket contact associations:", assocError);
+        }
+      } else if (isExplicitDealObject) {
+        console.log(`Attempting to find contact associated with Deal ID ${object.objectId}`);
+        try {
+          const assocUrl = `https://api.hubapi.com/crm/v3/objects/deals/${object.objectId}/associations/contacts`;
+          const assocResponse = await fetch(assocUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (assocResponse.ok) {
+            const assocData = await assocResponse.json();
+            if (assocData.results && assocData.results.length > 0) {
+              contactId = assocData.results[0].id;
+              console.log(`Found associated contactId ${contactId} from Deal ${object.objectId}`);
+            }
+          }
+        } catch (assocError) {
+          console.error("Error fetching deal contact associations:", assocError);
+        }
+      } else if (!rawObjectType) {
+        // Fallback if objectType is omitted entirely
+        contactId = object.objectId;
       }
     }
 
@@ -177,7 +255,12 @@ export async function POST(request) {
       let parsedErrorMessage = errorText;
       try {
         const errorJson = JSON.parse(errorText);
-        parsedErrorMessage = errorJson.message || errorJson.error || errorText;
+        if (Array.isArray(errorJson.errors) && errorJson.errors.length > 0) {
+          const details = errorJson.errors.map((e) => e.message || JSON.stringify(e)).join("; ");
+          parsedErrorMessage = `${errorJson.message || "Error"}: ${details}`;
+        } else {
+          parsedErrorMessage = errorJson.message || errorJson.error || errorText;
+        }
       } catch {
         // Use raw errorText if JSON parsing fails
       }
