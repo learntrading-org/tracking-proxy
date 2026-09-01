@@ -1,0 +1,64 @@
+{
+    "uid": "tag_deal_lost_contact_action",
+    "type": "workflow-action",
+    "config": {
+        "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/tag-deal-lost",
+        "isPublished": true,
+        "supportedClients": [
+            {
+                "client": "WORKFLOWS"
+            }
+        ],
+        "inputFields": [
+            {
+                "typeDefinition": {
+                    "name": "email",
+                    "type": "string",
+                    "fieldType": "text"
+                },
+                "supportedValueTypes": [
+                    "OBJECT_PROPERTY"
+                ],
+                "isRequired": true
+            }
+        ],
+        "labels": {
+            "en": {
+                "appDisplayName": "HS Bullmania Custom Features",
+                "actionName": "Tag Deal Lost Contact",
+                "actionDescription": "Tag a contact in Kit when a deal is lost",
+                "actionCardContent": "Tag Deal Lost Contact - Email: {{email}}",
+                "inputFieldLabels": {
+                    "email": "Email"
+                },
+                "inputFieldDescriptions": {
+                    "email": "The contact's email address to tag in Kit"
+                },
+                "outputFieldLabels": {
+                    "status": "Status",
+                    "message": "Message"
+                }
+            }
+        },
+        "objectTypes": [
+            "CONTACT",
+            "DEAL"
+        ],
+        "outputFields": [
+            {
+                "typeDefinition": {
+                    "name": "status",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            },
+            {
+                "typeDefinition": {
+                    "name": "message",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            }
+        ]
+    }
+}

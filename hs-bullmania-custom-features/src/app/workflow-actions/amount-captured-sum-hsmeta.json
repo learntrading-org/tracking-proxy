@@ -1,0 +1,58 @@
+{
+  "uid": "amount_captured_sum_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/amount-captured-sum",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "captured_this_far",
+          "type": "number",
+          "fieldType": "number"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "payment_amount",
+          "type": "number",
+          "fieldType": "number"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Amount Captured Sum",
+        "actionDescription": "Adds the current payment amount to the existing 'Amount captured this far' value and returns the updated total",
+        "actionCardContent": "Updated Amount Captured This Far = Amount captured this far + Payment Amount",
+        "inputFieldLabels": {
+          "captured_this_far": "Amount captured this far",
+          "payment_amount": "Payment Amount"
+        },
+        "inputFieldDescriptions": {
+          "captured_this_far": "The current value of the 'Amount captured this far' property on the ticket.",
+          "payment_amount": "The payment amount received in this trigger (the amount to add)."
+        },
+        "outputFieldLabels": {
+          "updated_captured_this_far": "Updated Amount Captured This Far"
+        }
+      }
+    },
+    "objectTypes": ["TICKET"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "updated_captured_this_far",
+          "type": "number",
+          "fieldType": "number"
+        }
+      }
+    ]
+  }
+}

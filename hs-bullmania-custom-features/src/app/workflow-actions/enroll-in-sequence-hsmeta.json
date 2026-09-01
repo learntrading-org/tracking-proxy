@@ -1,0 +1,110 @@
+{
+  "uid": "enroll_in_sequence_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/enroll-sequence",
+    "isPublished": true,
+    "supportedClients": [
+      {
+        "client": "WORKFLOWS"
+      }
+    ],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "email",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "OBJECT_PROPERTY"
+        ],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "sequenceId",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            {
+              "value": "628348137",
+              "label": "Discord Moneyline Reminder"
+            },
+            {
+              "value": "615158993",
+              "label": "First 1-on-1 reachout"
+            }
+          ]
+        },
+        "supportedValueTypes": [
+          "STATIC_VALUE"
+        ],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "senderEmail",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "STATIC_VALUE"
+        ],
+        "isRequired": false
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Enroll in HubSpot Sequence",
+        "actionDescription": "Enrolls a contact into a selected HubSpot sequence from workflow",
+        "actionCardContent": "Enroll {{email}} into Sequence {{sequenceId}}",
+        "inputFieldLabels": {
+          "email": "Contact Email",
+          "sequenceId": "HubSpot Sequence",
+          "senderEmail": "Sender Email (Optional, default: hello@bullmania.com)"
+        },
+        "inputFieldDescriptions": {
+          "email": "The contact's email address to enroll into the sequence",
+          "sequenceId": "Select the sequence to enroll the contact in",
+          "senderEmail": "The sender email address with a connected inbox. Defaults to hello@bullmania.com if left blank"
+        },
+        "outputFieldLabels": {
+          "status": "Status",
+          "message": "Message",
+          "enrollmentId": "Enrollment ID"
+        }
+      }
+    },
+    "objectTypes": [
+      "CONTACT",
+      "TICKET",
+      "DEAL",
+      "COMPANY"
+    ],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "status",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "message",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "enrollmentId",
+          "type": "string",
+          "fieldType": "text"
+        }
+      }
+    ]
+  }
+}

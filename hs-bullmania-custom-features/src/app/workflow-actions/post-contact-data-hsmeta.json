@@ -1,0 +1,76 @@
+{
+    "uid": "post_contact_data_action",
+    "type": "workflow-action",
+    "config": {
+        "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/post-contact-data",
+        "isPublished": true,
+        "supportedClients": [
+            {
+                "client": "WORKFLOWS"
+            }
+        ],
+        "inputFields": [
+            {
+                "typeDefinition": {
+                    "name": "email",
+                    "type": "string",
+                    "fieldType": "text"
+                },
+                "supportedValueTypes": [
+                    "OBJECT_PROPERTY"
+                ],
+                "isRequired": true
+            },
+            {
+                "typeDefinition": {
+                    "name": "phone",
+                    "type": "string",
+                    "fieldType": "text"
+                },
+                "supportedValueTypes": [
+                    "OBJECT_PROPERTY"
+                ],
+                "isRequired": false
+            }
+        ],
+        "labels": {
+            "en": {
+                "appDisplayName": "HS Bullmania Custom Features",
+                "actionName": "Post Contact Data",
+                "actionDescription": "Read email and contact number from user contact and post to actionUrl endpoint",
+                "actionCardContent": "Post Contact Data - Email: {{email}}, Phone: {{phone}}",
+                "inputFieldLabels": {
+                    "email": "Email",
+                    "phone": "Contact Number"
+                },
+                "inputFieldDescriptions": {
+                    "email": "The contact's email address",
+                    "phone": "The contact's phone number"
+                },
+                "outputFieldLabels": {
+                    "status": "Status",
+                    "message": "Message"
+                }
+            }
+        },
+        "objectTypes": [
+            "CONTACT"
+        ],
+        "outputFields": [
+            {
+                "typeDefinition": {
+                    "name": "status",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            },
+            {
+                "typeDefinition": {
+                    "name": "message",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            }
+        ]
+    }
+}

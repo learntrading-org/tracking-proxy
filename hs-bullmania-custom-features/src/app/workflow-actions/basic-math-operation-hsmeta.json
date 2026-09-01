@@ -1,0 +1,83 @@
+{
+  "uid": "basic_math_operation_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/basic-math",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "number1",
+          "type": "number",
+          "fieldType": "number"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "number2",
+          "type": "number",
+          "fieldType": "number"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "operator",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "value": "add", "label": "Add" },
+            { "value": "subtract", "label": "Subtract" },
+            { "value": "multiply", "label": "Multiply" },
+            { "value": "divide", "label": "Divide" }
+          ]
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Basic Math Operation",
+        "actionDescription": "Performs a basic math operation (add, subtract, multiply, divide) on two numbers",
+        "actionCardContent": "Result = {{number1}} {{operator}} {{number2}}",
+        "inputFieldLabels": {
+          "number1": "Number 1",
+          "number2": "Number 2",
+          "operator": "Operator"
+        },
+        "inputFieldDescriptions": {
+          "number1": "The first number (from an object property).",
+          "number2": "The second number (from an object property).",
+          "operator": "The operation to perform: add, subtract, multiply, or divide."
+        },
+        "outputFieldLabels": {
+          "result": "Result"
+        }
+      }
+    },
+    "objectTypes": [
+      "CONTACT",
+      "COMPANY",
+      "DEAL",
+      "TICKET",
+      "PRODUCT",
+      "LINE_ITEM",
+      "QUOTE"
+    ],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "result",
+          "type": "number",
+          "fieldType": "number"
+        }
+      }
+    ]
+  }
+}

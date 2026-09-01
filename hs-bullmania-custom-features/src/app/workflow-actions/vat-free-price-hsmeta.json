@@ -1,0 +1,58 @@
+{
+  "uid": "vat_free_price_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/vat-free-price",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "amount",
+          "type": "number",
+          "fieldType": "number"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "vat",
+          "type": "number",
+          "fieldType": "number"
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Calculate VAT-Free Price",
+        "actionDescription": "Calculates the VAT-free price based on amount and VAT rate",
+        "actionCardContent": "Computes VAT-free price as Amount - (Amount * VAT)",
+        "inputFieldLabels": {
+          "amount": "Amount",
+          "vat": "VAT Rate %"
+        },
+        "inputFieldDescriptions": {
+          "amount": "The original amount including VAT.",
+          "vat": "The VAT rate as a %(e.g. 20%)."
+        },
+        "outputFieldLabels": {
+          "vat_free_price": "VAT-Free Price"
+        }
+      }
+    },
+    "objectTypes": ["DEAL"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "vat_free_price",
+          "type": "number",
+          "fieldType": "number"
+        }
+      }
+    ]
+  }
+}

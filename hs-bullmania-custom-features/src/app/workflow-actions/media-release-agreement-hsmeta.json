@@ -1,0 +1,68 @@
+{
+  "uid": "media-release-agreement",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/media-release-agreement",
+    "isPublished": true,
+    "supportedClients": [
+      {
+        "client": "WORKFLOWS"
+      }
+    ],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "email",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "OBJECT_PROPERTY"
+        ],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "firstName",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "OBJECT_PROPERTY"
+        ],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "lastName",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "OBJECT_PROPERTY"
+        ],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "actionName": "Media Release Agreement",
+        "actionDescription": "Sends a Media Release form agreement to the specified contact",
+        "actionCardContent": "Send Media Release Agreement to {{firstName}} {{lastName}} ({{email}})",
+        "inputFieldLabels": {
+          "email": "Email Address",
+          "firstName": "First Name",
+          "lastName": "Last Name"
+        },
+        "inputFieldDescriptions": {
+          "email": "The recipient's email address",
+          "firstName": "The recipient's first name",
+          "lastName": "The recipient's last name"
+        }
+      }
+    },
+    "objectTypes": [
+      "CONTACT"
+    ]
+  }
+}

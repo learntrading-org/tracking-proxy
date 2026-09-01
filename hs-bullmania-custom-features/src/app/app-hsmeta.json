@@ -1,0 +1,35 @@
+{
+  "uid": "hs_bullmania_custom_features",
+  "type": "app",
+  "config": {
+    "description": "A basic static token app for testing",
+    "name": "HS Bullmania Custom Features",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "automation.sequences.enrollments.write",
+        "automation.sequences.read"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://api.hubapi.com",
+        "https://tracking-proxy-mocha.vercel.app"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@example.com",
+      "documentationUrl": "https://example.com/docs",
+      "supportUrl": "https://example.com/support",
+      "supportPhone": "+18005555555"
+    }
+  }
+}

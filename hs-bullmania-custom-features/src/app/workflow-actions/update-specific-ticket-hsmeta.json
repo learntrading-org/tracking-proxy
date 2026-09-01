@@ -1,0 +1,58 @@
+{
+    "uid": "update_specific_ticket_action",
+    "type": "workflow-action",
+    "config": {
+        "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/update-ticket",
+        "isPublished": true,
+        "supportedClients": [
+            {
+                "client": "WORKFLOWS"
+            }
+        ],
+        "inputFields": [
+            {
+                "typeDefinition": {
+                    "name": "target_pipeline_id",
+                    "type": "string",
+                    "fieldType": "text",
+                    "label": "Pipeline ID (e.g. 2614720732)"
+                },
+                "supportedValueTypes": [
+                    "STATIC_VALUE"
+                ],
+                "isRequired": true
+            },
+            {
+                "typeDefinition": {
+                    "name": "new_stage_id",
+                    "type": "string",
+                    "fieldType": "text",
+                    "label": "New Stage ID"
+                },
+                "supportedValueTypes": [
+                    "STATIC_VALUE"
+                ],
+                "isRequired": true
+            }
+        ],
+        "labels": {
+            "en": {
+                "appDisplayName": "HS Bullmania Custom Features",
+                "actionName": "Update Ticket Stage in Pipeline",
+                "actionDescription": "Finds the ticket associated with the enrolled Contact in a specific Pipeline and updates its stage.",
+                "actionCardContent": "Move Contact's ticket in Pipeline {{target_pipeline_id}} to Stage {{new_stage_id}}",
+                "inputFieldLabels": {
+                    "target_pipeline_id": "Pipeline ID",
+                    "new_stage_id": "New Stage ID"
+                },
+                "inputFieldDescriptions": {
+                    "target_pipeline_id": "The ID of the pipeline to check (e.g. 2614720732).",
+                    "new_stage_id": "The ID of the stage to move the ticket to."
+                }
+            }
+        },
+        "objectTypes": [
+            "CONTACT"
+        ]
+    }
+}

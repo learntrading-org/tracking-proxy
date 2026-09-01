@@ -1,0 +1,11 @@
+{
+  "uid": "custom_docuseal_editor_card",
+  "type": "card",
+  "config": {
+    "name": "Custom DocuSeal Agreement",
+    "description": "Configure and preview dynamic custom variables before triggering a DocuSeal agreement submission.",
+    "entrypoint": "/app/cards/custom-docuseal-editor-card.jsx",
+    "location": "crm.record.sidebar",
+    "objectTypes": ["CONTACT"]
+  }
+}

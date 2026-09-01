@@ -1,0 +1,55 @@
+{
+  "uid": "post_to_webhook_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/webhook",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "dataObjectId",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Post to Webhook",
+        "actionDescription": "Send contact data to an external URL",
+        "actionCardContent": "Posts contact details and a custom ID to an external server.",
+        "inputFieldLabels": {
+          "dataObjectId": "Data Object ID"
+        },
+        "inputFieldDescriptions": {
+          "dataObjectId": "The ID of the data object to send."
+        },
+        "outputFieldLabels": {
+          "status": "Status",
+          "statusCode": "Status Code"
+        }
+      }
+    },
+    "objectTypes": ["CONTACT"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "status",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "statusCode",
+          "type": "number",
+          "fieldType": "number"
+        }
+      }
+    ]
+  }
+}

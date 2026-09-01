@@ -1,0 +1,63 @@
+{
+    "uid": "tag_no_show_contact_action",
+    "type": "workflow-action",
+    "config": {
+        "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/tag-no-show",
+        "isPublished": true,
+        "supportedClients": [
+            {
+                "client": "WORKFLOWS"
+            }
+        ],
+        "inputFields": [
+            {
+                "typeDefinition": {
+                    "name": "email",
+                    "type": "string",
+                    "fieldType": "text"
+                },
+                "supportedValueTypes": [
+                    "OBJECT_PROPERTY"
+                ],
+                "isRequired": true
+            }
+        ],
+        "labels": {
+            "en": {
+                "appDisplayName": "HS Bullmania Custom Features",
+                "actionName": "Tag No-Show Contact",
+                "actionDescription": "Tag a contact in Kit when they don't attend a booked call",
+                "actionCardContent": "Tag No-Show Contact - Email: {{email}}",
+                "inputFieldLabels": {
+                    "email": "Email"
+                },
+                "inputFieldDescriptions": {
+                    "email": "The contact's email address to tag in Kit"
+                },
+                "outputFieldLabels": {
+                    "status": "Status",
+                    "message": "Message"
+                }
+            }
+        },
+        "objectTypes": [
+            "CONTACT"
+        ],
+        "outputFields": [
+            {
+                "typeDefinition": {
+                    "name": "status",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            },
+            {
+                "typeDefinition": {
+                    "name": "message",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            }
+        ]
+    }
+}

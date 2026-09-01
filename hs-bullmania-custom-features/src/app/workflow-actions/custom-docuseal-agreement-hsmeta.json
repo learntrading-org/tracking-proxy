@@ -1,0 +1,114 @@
+{
+  "uid": "custom_docuseal_agreement",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/custom-docuseal-agreement",
+    "isPublished": true,
+    "supportedClients": [
+      {
+        "client": "WORKFLOWS"
+      }
+    ],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "email",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "firstName",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "lastName",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "program_fee",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "end_date",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "program_deliverables",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Custom DocuSeal Agreement",
+        "actionDescription": "Sends a personalized DocuSeal agreement with dynamic custom properties mapped from the contact",
+        "actionCardContent": "Send Custom DocuSeal Agreement to {{firstName}} {{lastName}} ({{email}}) with Fee: {{program_fee}}, End Date: {{end_date}}",
+        "inputFieldLabels": {
+          "email": "Email Address",
+          "firstName": "First Name",
+          "lastName": "Last Name",
+          "program_fee": "Program Fee Property",
+          "end_date": "End Date Property",
+          "program_deliverables": "Program Deliverables Property"
+        },
+        "inputFieldDescriptions": {
+          "email": "The contact's email address",
+          "firstName": "The contact's first name (optional)",
+          "lastName": "The contact's last name (optional)",
+          "program_fee": "Mapped contact property for the Program Fee",
+          "end_date": "Mapped contact property for the End Date",
+          "program_deliverables": "Mapped contact property for the Program Deliverables"
+        },
+        "outputFieldLabels": {
+          "status": "Status",
+          "message": "Message"
+        }
+      }
+    },
+    "objectTypes": ["CONTACT"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "status",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "message",
+          "type": "string",
+          "fieldType": "text"
+        }
+      }
+    ]
+  }
+}

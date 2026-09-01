@@ -1,0 +1,76 @@
+{
+    "uid": "add_intercom_tag_action",
+    "type": "workflow-action",
+    "config": {
+        "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/add-intercom-tag",
+        "isPublished": true,
+        "supportedClients": [
+            {
+                "client": "WORKFLOWS"
+            }
+        ],
+        "inputFields": [
+            {
+                "typeDefinition": {
+                    "name": "email",
+                    "type": "string",
+                    "fieldType": "text"
+                },
+                "supportedValueTypes": [
+                    "OBJECT_PROPERTY"
+                ],
+                "isRequired": true
+            },
+            {
+                "typeDefinition": {
+                    "name": "tag_id",
+                    "type": "string",
+                    "fieldType": "text"
+                },
+                "supportedValueTypes": [
+                    "STATIC_VALUE"
+                ],
+                "isRequired": true
+            }
+        ],
+        "labels": {
+            "en": {
+                "appDisplayName": "HS Bullmania Custom Features",
+                "actionName": "Add Intercom Tag",
+                "actionDescription": "Add a specific Intercom tag to a contact using their email",
+                "actionCardContent": "Add Intercom Tag {{tag_id}} to Contact {{email}}",
+                "inputFieldLabels": {
+                    "email": "Email",
+                    "tag_id": "Intercom Tag ID"
+                },
+                "inputFieldDescriptions": {
+                    "email": "The contact's email address",
+                    "tag_id": "The ID of the Intercom tag to apply"
+                },
+                "outputFieldLabels": {
+                    "status": "Status",
+                    "message": "Message"
+                }
+            }
+        },
+        "objectTypes": [
+            "CONTACT"
+        ],
+        "outputFields": [
+            {
+                "typeDefinition": {
+                    "name": "status",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            },
+            {
+                "typeDefinition": {
+                    "name": "message",
+                    "type": "string",
+                    "fieldType": "text"
+                }
+            }
+        ]
+    }
+}

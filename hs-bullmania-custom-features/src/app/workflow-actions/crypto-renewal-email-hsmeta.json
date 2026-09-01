@@ -1,0 +1,88 @@
+{
+  "uid": "crypto_renewal_email_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/crypto-renewal-email",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "firstName",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "price",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "billing",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "email",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Crypto Renewal Email",
+        "actionDescription": "Send renewal email data to an external server",
+        "actionCardContent": "Posts first name, price, billing, and email for crypto renewal email processing.",
+        "inputFieldLabels": {
+          "firstName": "First Name",
+          "price": "Price",
+          "billing": "Billing",
+          "email": "Email Address"
+        },
+        "inputFieldDescriptions": {
+          "firstName": "The contact's first name.",
+          "price": "The billing price or rate.",
+          "billing": "Details of the billing type",
+          "email": "The contact's email address."
+        },
+        "outputFieldLabels": {
+          "status": "Status",
+          "statusCode": "Status Code"
+        }
+      }
+    },
+    "objectTypes": ["CONTACT"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "status",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "statusCode",
+          "type": "number",
+          "fieldType": "number"
+        }
+      }
+    ]
+  }
+}
