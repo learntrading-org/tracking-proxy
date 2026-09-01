@@ -4,6 +4,115 @@ import { NextResponse } from "next/server";
 // Default Bullmania HubSpot User ID (hubspot@bullmania.com)
 const DEFAULT_HUBSPOT_USER_ID = "84285656";
 
+// Known sequence labels for clearer alert messaging
+const SEQUENCE_NAMES = {
+  "628348137": "Discord Moneyline Reminder",
+  "615158993": "First 1-on-1 reachout",
+};
+
+/**
+ * Sends a formatted error alert to the internal Slack channel via SLACK_DOCUSEAL_WEBHOOK
+ */
+async function sendSlackErrorAlert({
+  errorMessage,
+  contactId,
+  email,
+  sequenceId,
+  senderEmail,
+  objectType,
+  objectId,
+  details,
+}) {
+  const slackWebhook = process.env.SLACK_DOCUSEAL_WEBHOOK;
+  if (!slackWebhook) {
+    console.warn("SLACK_DOCUSEAL_WEBHOOK is not configured. Skipping Slack alert.");
+    return;
+  }
+
+  try {
+    const sequenceLabel = SEQUENCE_NAMES[sequenceId]
+      ? `${sequenceId} (${SEQUENCE_NAMES[sequenceId]})`
+      : sequenceId || "N/A";
+
+    const fields = [
+      {
+        title: "Error Message",
+        value: String(errorMessage || "Unknown error"),
+        short: false,
+      },
+      {
+        title: "Contact Email",
+        value: String(email || "N/A"),
+        short: true,
+      },
+      {
+        title: "Contact ID",
+        value: String(contactId || "N/A"),
+        short: true,
+      },
+      {
+        title: "Sequence",
+        value: String(sequenceLabel),
+        short: true,
+      },
+      {
+        title: "Sender Email",
+        value: String(senderEmail || "hello@bullmania.com"),
+        short: true,
+      },
+    ];
+
+    if (objectType || objectId) {
+      fields.push({
+        title: "Workflow Object",
+        value: `${objectType || "Unknown"} (ID: ${objectId || "N/A"})`,
+        short: true,
+      });
+    }
+
+    if (details) {
+      const detailStr =
+        typeof details === "object"
+          ? JSON.stringify(details, null, 2)
+          : String(details);
+      fields.push({
+        title: "Technical Details",
+        value: `\`\`\`${detailStr.slice(0, 1000)}\`\`\``,
+        short: false,
+      });
+    }
+
+    const slackPayload = {
+      attachments: [
+        {
+          color: "#d9534f", // Danger / Red
+          title: "🚨 HubSpot Sequence Enrollment Failed",
+          fields: fields,
+          footer: "Tracking Proxy • Sequence Enrollment Alert",
+          ts: Math.floor(Date.now() / 1000),
+        },
+      ],
+    };
+
+    const slackResponse = await fetch(slackWebhook, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(slackPayload),
+    });
+
+    if (!slackResponse.ok) {
+      const errText = await slackResponse.text();
+      console.error("Failed to send Slack alert:", errText);
+    } else {
+      console.log("Slack error alert sent successfully.");
+    }
+  } catch (slackError) {
+    console.error("Error dispatching Slack alert:", slackError);
+  }
+}
+
 // Handle CORS preflight requests
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -19,6 +128,14 @@ export async function OPTIONS() {
 
 // Handle HubSpot Custom Workflow Action webhook for sequence enrollment
 export async function POST(request) {
+  let contactId;
+  let email;
+  let sequenceId;
+  let senderEmail;
+  let rawObjectType;
+  let object = {};
+  let contactLookupError = null;
+
   try {
     const payload = await request.json();
     console.log("Received HubSpot sequence enrollment webhook payload:", JSON.stringify(payload, null, 2));
@@ -27,7 +144,7 @@ export async function POST(request) {
     const inputFields = payload.inputFields || {};
     const typedInputs = payload.typedInputs || {};
     const properties = payload.properties || {};
-    const object = payload.object || {};
+    object = payload.object || {};
 
     // Helper to extract value across different HubSpot payload formats
     const getInputValue = (key) => {
@@ -51,12 +168,22 @@ export async function POST(request) {
 
     const token = process.env.HUBSPOT_ACCESS_TOKEN;
     if (!token) {
-      console.error("Missing HUBSPOT_ACCESS_TOKEN environment variable");
+      const errorMessage = "Server configuration error: Missing HUBSPOT_ACCESS_TOKEN";
+      console.error(errorMessage);
+      await sendSlackErrorAlert({
+        errorMessage,
+        contactId,
+        email,
+        sequenceId,
+        senderEmail,
+        objectType: rawObjectType,
+        objectId: object?.objectId,
+      });
       return NextResponse.json(
         {
           outputFields: {
             status: "FAILED",
-            message: "Server configuration error: Missing HUBSPOT_ACCESS_TOKEN",
+            message: errorMessage,
             enrollmentId: "",
           },
         },
@@ -69,7 +196,7 @@ export async function POST(request) {
       );
     }
 
-    const rawObjectType = String(object.objectType || object.objectTypeId || "").toUpperCase();
+    rawObjectType = String(object.objectType || object.objectTypeId || "").toUpperCase();
     const isExplicitContactObject =
       rawObjectType === "CONTACT" ||
       rawObjectType === "0-1" ||
@@ -86,7 +213,7 @@ export async function POST(request) {
       rawObjectType === "3";
 
     // 1. Determine contactId
-    let contactId = getInputValue("contactId") || getInputValue("contact_id");
+    contactId = getInputValue("contactId") || getInputValue("contact_id");
 
     // If the workflow object is specifically a Contact, object.objectId is the contactId
     if (!contactId && isExplicitContactObject && object.objectId) {
@@ -94,10 +221,10 @@ export async function POST(request) {
     }
 
     // 2. Extract email, sequenceId, and senderEmail
-    const email = getInputValue("email");
-    const sequenceId = getInputValue("sequenceId") || getInputValue("sequence_id");
+    email = getInputValue("email");
+    sequenceId = getInputValue("sequenceId") || getInputValue("sequence_id");
     const rawSenderEmail = getInputValue("senderEmail") || getInputValue("sender_email");
-    const senderEmail =
+    senderEmail =
       rawSenderEmail && typeof rawSenderEmail === "string" && rawSenderEmail.trim() !== ""
         ? rawSenderEmail.trim()
         : "hello@bullmania.com";
@@ -139,9 +266,11 @@ export async function POST(request) {
           }
         } else {
           const searchErrorText = await searchResponse.text();
+          contactLookupError = `HubSpot Contacts Search API returned ${searchResponse.status}: ${searchErrorText}`;
           console.error("HubSpot Contacts Search API returned error:", searchErrorText);
         }
       } catch (searchError) {
+        contactLookupError = `Contacts Search exception: ${searchError.message}`;
         console.error("Error executing HubSpot contact search:", searchError);
       }
     }
@@ -161,8 +290,12 @@ export async function POST(request) {
               contactId = assocData.results[0].id;
               console.log(`Found associated contactId ${contactId} from Ticket ${object.objectId}`);
             }
+          } else {
+            const assocErr = await assocResponse.text();
+            contactLookupError = `Ticket Associations API returned ${assocResponse.status}: ${assocErr}`;
           }
         } catch (assocError) {
+          contactLookupError = `Ticket Associations exception: ${assocError.message}`;
           console.error("Error fetching ticket contact associations:", assocError);
         }
       } else if (isExplicitDealObject) {
@@ -178,8 +311,12 @@ export async function POST(request) {
               contactId = assocData.results[0].id;
               console.log(`Found associated contactId ${contactId} from Deal ${object.objectId}`);
             }
+          } else {
+            const assocErr = await assocResponse.text();
+            contactLookupError = `Deal Associations API returned ${assocResponse.status}: ${assocErr}`;
           }
         } catch (assocError) {
+          contactLookupError = `Deal Associations exception: ${assocError.message}`;
           console.error("Error fetching deal contact associations:", assocError);
         }
       } else if (!rawObjectType) {
@@ -190,10 +327,23 @@ export async function POST(request) {
 
     // Validate contactId
     if (!contactId) {
-      const errorMessage = email
+      let errorMessage = email
         ? `Contact not found in HubSpot for email: ${email}`
         : "Missing contactId and email in payload";
+      if (contactLookupError) {
+        errorMessage += ` (${contactLookupError})`;
+      }
       console.warn(`Enrollment request rejected: ${errorMessage}`);
+      await sendSlackErrorAlert({
+        errorMessage,
+        contactId: null,
+        email,
+        sequenceId,
+        senderEmail,
+        objectType: rawObjectType,
+        objectId: object?.objectId,
+        details: contactLookupError,
+      });
       return NextResponse.json(
         {
           outputFields: {
@@ -213,12 +363,22 @@ export async function POST(request) {
 
     // Validate sequenceId
     if (!sequenceId) {
-      console.warn("Enrollment request rejected: Missing sequenceId in payload");
+      const errorMessage = "Missing sequenceId in payload";
+      console.warn(`Enrollment request rejected: ${errorMessage}`);
+      await sendSlackErrorAlert({
+        errorMessage,
+        contactId,
+        email,
+        sequenceId: null,
+        senderEmail,
+        objectType: rawObjectType,
+        objectId: object?.objectId,
+      });
       return NextResponse.json(
         {
           outputFields: {
             status: "FAILED",
-            message: "Missing sequenceId in payload",
+            message: errorMessage,
             enrollmentId: "",
           },
         },
@@ -262,6 +422,7 @@ export async function POST(request) {
     if (!enrollResponse.ok) {
       const errorText = await enrollResponse.text();
       let parsedErrorMessage = errorText;
+      let errorDetails = errorText;
       try {
         const errorJson = JSON.parse(errorText);
         if (Array.isArray(errorJson.errors) && errorJson.errors.length > 0) {
@@ -270,6 +431,7 @@ export async function POST(request) {
         } else {
           parsedErrorMessage = errorJson.message || errorJson.error || errorText;
         }
+        errorDetails = errorJson;
       } catch {
         // Use raw errorText if JSON parsing fails
       }
@@ -278,6 +440,17 @@ export async function POST(request) {
         `HubSpot Sequences API error (${enrollResponse.status}) for contact ${stringContactId}:`,
         parsedErrorMessage
       );
+
+      await sendSlackErrorAlert({
+        errorMessage: `HubSpot API Error (${enrollResponse.status}): ${parsedErrorMessage}`,
+        contactId: stringContactId,
+        email,
+        sequenceId: stringSequenceId,
+        senderEmail,
+        objectType: rawObjectType,
+        objectId: object?.objectId,
+        details: errorDetails,
+      });
 
       return NextResponse.json(
         {
@@ -320,6 +493,17 @@ export async function POST(request) {
     );
   } catch (error) {
     console.error("Unexpected error in sequence enrollment endpoint:", error);
+    await sendSlackErrorAlert({
+      errorMessage: `Internal server error: ${error.message}`,
+      contactId: typeof contactId !== "undefined" ? contactId : null,
+      email: typeof email !== "undefined" ? email : null,
+      sequenceId: typeof sequenceId !== "undefined" ? sequenceId : null,
+      senderEmail: typeof senderEmail !== "undefined" ? senderEmail : null,
+      objectType: typeof rawObjectType !== "undefined" ? rawObjectType : null,
+      objectId: object?.objectId,
+      details: error.stack || error.message,
+    });
+
     return NextResponse.json(
       {
         outputFields: {
