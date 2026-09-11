@@ -52,7 +52,7 @@
           "type": "string",
           "fieldType": "text"
         },
-        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "supportedValueTypes": ["STATIC_VALUE"],
         "isRequired": false
       }
     ],
