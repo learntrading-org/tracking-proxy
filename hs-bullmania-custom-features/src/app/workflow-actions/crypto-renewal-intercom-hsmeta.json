@@ -60,7 +60,7 @@
       "en": {
         "appDisplayName": "HS Bullmania Custom Features",
         "actionName": "Send Crypto Renewal Email (Intercom)",
-        "actionDescription": "Sends the crypto renewal email via Intercom on behalf of a support teammate.",
+        "actionDescription": "Sends a crypto renewal email via Intercom. The teammate authors the reply; customers receive it from hello@bullmania.com.",
         "actionCardContent": "Send crypto renewal email to {{email}} on behalf of {{senderEmail}} (price: {{price}})",
         "inputFieldLabels": {
           "email": "Email",
@@ -74,7 +74,7 @@
           "firstName": "The contact's first name",
           "price": "Map to the contact price property (Renewal Price / Instalment)",
           "renewalDate": "Map to the contact renewal_date property",
-          "senderEmail": "Intercom teammate email to send on behalf of. Defaults to hello@bullmania.com if blank."
+          "senderEmail": "Intercom teammate who authors the email. Customers still receive it from hello@bullmania.com. Defaults to hello@bullmania.com if blank."
         },
         "outputFieldLabels": {
           "status": "Status",

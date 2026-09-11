@@ -266,7 +266,7 @@ const RenewalEmailCard = ({ context, actions }) => {
       <Box>
         <Heading>Renewal Email</Heading>
         <Text>
-          Uses Intercom. Drafts stay internal so you can review; Send emails the contact on behalf of the selected teammate.
+          Sends an Intercom email conversation. The teammate below authors the reply; customers receive it from hello@bullmania.com.
         </Text>
       </Box>
 

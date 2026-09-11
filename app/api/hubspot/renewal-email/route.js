@@ -14,6 +14,7 @@ import {
   renderRenewalEmail,
   resolveAdmin,
   sendIntercomEmail,
+  SENDER_EMAIL,
   textToHtml,
 } from "./lib";
 
@@ -136,8 +137,8 @@ export async function POST(request) {
     }
 
     const admins = await listIntercomAdmins(intercomToken);
-    const admin = resolveAdmin(admins, { adminId, senderEmail });
-    if (!admin) {
+    const onBehalfAdmin = resolveAdmin(admins, { adminId, senderEmail });
+    if (!onBehalfAdmin) {
       const message = "Could not resolve an Intercom teammate to send on behalf of";
       return workflow
         ? workflowResponse({ status: "FAILED", message, mode, email })
@@ -165,14 +166,14 @@ export async function POST(request) {
     let intercomResult;
     if (mode === "draft") {
       intercomResult = await draftIntercomNote(intercomToken, {
-        admin,
+        admin: onBehalfAdmin,
         contact,
         subject,
         body,
       });
     } else {
       intercomResult = await sendIntercomEmail(intercomToken, {
-        admin,
+        admin: onBehalfAdmin,
         contact,
         subject,
         html,
@@ -182,7 +183,7 @@ export async function POST(request) {
     const hubspotNote = [
       mode === "draft" ? "Drafted" : "Sent",
       "Intercom renewal email",
-      `on behalf of ${admin.name}.`,
+      `from ${SENDER_EMAIL} on behalf of ${onBehalfAdmin.name}.`,
       `Subject: ${subject}`,
       `Amount: ${formatAmount(price) || price}`,
       formatDate(renewalDate) ? `Renewal date: ${formatDate(renewalDate)}` : "",
@@ -200,8 +201,8 @@ export async function POST(request) {
 
     const successMessage =
       mode === "draft"
-        ? `Draft saved in Intercom for ${email} on behalf of ${admin.name}`
-        : `Email sent to ${email} on behalf of ${admin.name}`;
+        ? `Draft saved in Intercom for ${email} on behalf of ${onBehalfAdmin.name}`
+        : `Email sent to ${email} from ${SENDER_EMAIL} on behalf of ${onBehalfAdmin.name}`;
 
     if (workflow) {
       return workflowResponse({
@@ -211,7 +212,8 @@ export async function POST(request) {
         email,
         intercomContactId: contact.id,
         intercomId: intercomResult?.id || "",
-        adminEmail: admin.email,
+        adminEmail: onBehalfAdmin.email,
+        fromEmail: SENDER_EMAIL,
       });
     }
 
@@ -224,7 +226,12 @@ export async function POST(request) {
         body,
         intercomContactId: contact.id,
         intercomId: intercomResult?.id || "",
-        admin: { id: admin.id, name: admin.name, email: admin.email },
+        admin: {
+          id: onBehalfAdmin.id,
+          name: onBehalfAdmin.name,
+          email: onBehalfAdmin.email,
+        },
+        fromEmail: SENDER_EMAIL,
       },
       { status: 200, headers: CORS_HEADERS }
     );

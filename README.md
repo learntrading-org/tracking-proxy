@@ -31,7 +31,8 @@ Typical callers:
 | `HUBSPOT_ACCESS_TOKEN` | HubSpot CRM read/write (contacts, tickets) |
 | `CONVERTKIT_API_SECRET` | ConvertKit subscribe / tag / unsubscribe |
 | `INTERCOM_ACCESS_TOKEN` | Intercom contacts, tags, events, conversations, renewal emails |
-| `INTERCOM_DEFAULT_ADMIN_EMAIL` | Default Intercom teammate for renewal emails (`hello@bullmania.com` if unset) |
+| `INTERCOM_DEFAULT_ADMIN_EMAIL` | Default Intercom teammate to assign renewal conversations to (`hello@bullmania.com` if unset) |
+| `INTERCOM_SENDER_EMAIL` | Workspace inbound From address shown in HubSpot notes (`hello@bullmania.com` if unset). Intercom must keep Sending address on Inbound address. |
 | `DOCUSEAL_API_TOKEN` | Create DocuSeal submissions |
 | `SLACK_DOCUSEAL_WEBHOOK` | Slack alerts for agreement signing events |
 | `THRIVECART_API_KEY` | Grant course access after agreement signed |
@@ -543,7 +544,7 @@ Triggers crypto renewal email sequence in ConvertKit (tag `12168728`).
 
 ### HubSpot — renewal emails (Intercom)
 
-CRM card **Renewal Email** plus workflow action **Send Crypto Renewal Email (Intercom)**. Emails are sent through Intercom as the selected teammate. The card can still save an internal Intercom/HubSpot note via `mode: "draft"` (Intercom has no unsent-email draft API).
+CRM card **Renewal Email** plus workflow action **Send Crypto Renewal Email (Intercom)**. Send opens an Intercom email thread as the contact, then posts an admin reply as the selected teammate. The customer receives that reply from the workspace inbound address `hello@bullmania.com` (keep Intercom **Sending address** on **Inbound address**). Do not start the thread with `POST /messages`. The card can still save an internal Intercom/HubSpot note via `mode: "draft"`.
 
 #### `GET /api/hubspot/renewal-email/options`
 
@@ -555,7 +556,7 @@ Returns Intercom teammates and template metadata for the CRM card.
 |--------|-------------|--------|
 | `preview` | CRM card | Render subject/body, no side effects |
 | `draft` | CRM card **Save draft** | Internal Intercom + HubSpot notes. Customer is not emailed |
-| `send` | CRM card **Send email**; **all HubSpot workflow calls** | Intercom admin email (`template: personal`) |
+| `send` | CRM card **Send email**; **all HubSpot workflow calls** | Open email thread as the contact, then admin reply (delivered from `hello@bullmania.com`) |
 
 Workflow requests are forced to `send` and template `crypto`.
 

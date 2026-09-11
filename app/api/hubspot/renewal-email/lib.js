@@ -4,6 +4,8 @@ export const INTERCOM_VERSION = "2.14";
 export const CRYPTO_PAYMENT_URL = "https://bullmania.com/crypto-payment";
 export const DEFAULT_ADMIN_EMAIL =
   process.env.INTERCOM_DEFAULT_ADMIN_EMAIL || "hello@bullmania.com";
+export const SENDER_EMAIL =
+  process.env.INTERCOM_SENDER_EMAIL || DEFAULT_ADMIN_EMAIL;
 
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -12,12 +14,12 @@ export const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
-export function intercomHeaders(token) {
+export function intercomHeaders(token, version = INTERCOM_VERSION) {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     Accept: "application/json",
-    "Intercom-Version": INTERCOM_VERSION,
+    "Intercom-Version": version,
   };
 }
 
@@ -321,38 +323,69 @@ async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function sendIntercomEmail(token, { admin, contact, subject, html }) {
-  const headers = intercomHeaders(token);
-  const payload = {
-    message_type: "email",
-    subject,
-    body: html,
-    template: "personal",
-    from: { type: "admin", id: Number(admin.id) || admin.id },
-    to: {
-      type: contact.role === "lead" ? "lead" : "user",
-      id: contact.id,
-    },
-    create_conversation_without_contact_reply: true,
-  };
+// Proven Intercom send path:
+// 1. POST /conversations as the contact with message_type email (opens an email thread).
+// 2. POST /conversations/{id}/reply as the teammate. That reply is the email the
+//    customer receives, from the workspace inbound address (hello@bullmania.com).
+// Do not start the thread with POST /messages from an admin — that path does not
+// send reliably from the shared address.
+const SEND_INTERCOM_VERSION = "2.11";
 
+export async function sendIntercomEmail(token, { admin, contact, subject, html }) {
+  const headers = intercomHeaders(token, SEND_INTERCOM_VERSION);
+  const created = await postIntercomWithRetry(
+    "https://api.intercom.io/conversations",
+    headers,
+    {
+      from: { type: "user", id: contact.id },
+      body: "Incoming request",
+      subject,
+      message_type: "email",
+    },
+    "Intercom Create Conversation Failed"
+  );
+
+  const conversationId = created.conversation_id || created.id;
+  if (!conversationId) {
+    throw new Error("Intercom Create Conversation Failed: missing conversation id");
+  }
+
+  const reply = await postIntercomWithRetry(
+    `https://api.intercom.io/conversations/${conversationId}/reply`,
+    headers,
+    {
+      message_type: "comment",
+      type: "admin",
+      admin_id: String(admin.id),
+      body: html,
+    },
+    "Intercom Reply Failed"
+  );
+
+  return {
+    ...reply,
+    conversation_id: conversationId,
+    id: reply.id || conversationId,
+  };
+}
+
+async function postIntercomWithRetry(url, headers, payload, errorLabel) {
   let lastError = "";
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const res = await fetch("https://api.intercom.io/messages", {
+    const res = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
     });
     if (res.ok) return res.json();
     lastError = await res.text();
-    // Newly created contacts can 404 for a short window.
-    if (res.status === 404 && attempt < 3) {
+    if ((res.status === 404 || res.status === 409) && attempt < 3) {
       await sleep(1000 * attempt);
       continue;
     }
-    throw new Error(`Intercom Send Email Failed: ${res.status} ${lastError}`);
+    throw new Error(`${errorLabel}: ${res.status} ${lastError}`);
   }
-  throw new Error(`Intercom Send Email Failed: ${lastError}`);
+  throw new Error(`${errorLabel}: ${lastError}`);
 }
 
 export async function draftIntercomNote(token, { admin, contact, subject, body }) {

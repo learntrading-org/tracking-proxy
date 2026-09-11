@@ -4,6 +4,7 @@ import {
   TEMPLATES,
   listIntercomAdmins,
   resolveAdmin,
+  SENDER_EMAIL,
 } from "../lib";
 
 export async function OPTIONS() {
@@ -28,6 +29,7 @@ export async function GET() {
         templates: TEMPLATES,
         admins,
         defaultAdminId: defaultAdmin?.id || "",
+        senderEmail: SENDER_EMAIL,
       },
       { status: 200, headers: CORS_HEADERS }
     );
