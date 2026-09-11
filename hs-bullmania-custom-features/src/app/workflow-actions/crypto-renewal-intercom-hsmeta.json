@@ -1,0 +1,135 @@
+{
+  "uid": "crypto_renewal_intercom_draft",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/renewal-email",
+    "isPublished": true,
+    "supportedClients": [
+      {
+        "client": "WORKFLOWS"
+      }
+    ],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "email",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "firstName",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "price",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "renewalDate",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "senderEmail",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "isRequired": false
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Draft Crypto Renewal Email (Intercom)",
+        "actionDescription": "Creates an Intercom draft note with the crypto renewal email for review. Does not email the contact.",
+        "actionCardContent": "Draft crypto renewal email to {{email}} on behalf of {{senderEmail}} (price: {{price}})",
+        "inputFieldLabels": {
+          "email": "Email",
+          "firstName": "First Name",
+          "price": "Renewal Price / Instalment",
+          "renewalDate": "Renewal Date",
+          "senderEmail": "Send on behalf of (Intercom teammate email)"
+        },
+        "inputFieldDescriptions": {
+          "email": "The contact's email address",
+          "firstName": "The contact's first name",
+          "price": "Map to the contact price property (Renewal Price / Instalment)",
+          "renewalDate": "Map to the contact renewal_date property",
+          "senderEmail": "Intercom teammate email to draft on behalf of. Defaults to hello@bullmania.com if blank."
+        },
+        "outputFieldLabels": {
+          "status": "Status",
+          "message": "Message",
+          "mode": "Delivery mode",
+          "intercomContactId": "Intercom contact ID",
+          "intercomId": "Intercom note ID",
+          "adminEmail": "Sender email"
+        }
+      }
+    },
+    "objectTypes": ["CONTACT"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "status",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "message",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "mode",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "intercomContactId",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "intercomId",
+          "type": "string",
+          "fieldType": "text"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "adminEmail",
+          "type": "string",
+          "fieldType": "text"
+        }
+      }
+    ]
+  }
+}

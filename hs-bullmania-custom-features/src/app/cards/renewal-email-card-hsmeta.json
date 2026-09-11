@@ -1,0 +1,11 @@
+{
+  "uid": "renewal_email_card",
+  "type": "card",
+  "config": {
+    "name": "Renewal Email",
+    "description": "Preview and send a renewal email via Intercom on behalf of a support teammate.",
+    "entrypoint": "/app/cards/renewal-email-card.jsx",
+    "location": "crm.record.sidebar",
+    "objectTypes": ["CONTACT"]
+  }
+}

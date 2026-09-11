@@ -8,7 +8,7 @@ Next.js app that powers Bullmania’s integration automations. Most endpoints un
 
 | Area | Purpose |
 |------|---------|
-| **HubSpot** | Workflow custom actions, contact/ticket updates, tagging, agreements, utility math |
+| **HubSpot** | Workflow custom actions, contact/ticket updates, tagging, agreements, renewal emails, utility math |
 | **iClosed** | Call booking → ConvertKit tags, Intercom AI interaction tags, HubSpot contact sync |
 | **ConvertKit** | Generic add/remove tag helpers (also used by frontends) |
 | **Payments** | Stripe & Whop webhooks → Slack payment alerts |
@@ -30,7 +30,8 @@ Typical callers:
 |----------|---------|
 | `HUBSPOT_ACCESS_TOKEN` | HubSpot CRM read/write (contacts, tickets) |
 | `CONVERTKIT_API_SECRET` | ConvertKit subscribe / tag / unsubscribe |
-| `INTERCOM_ACCESS_TOKEN` | Intercom contacts, tags, events, conversations |
+| `INTERCOM_ACCESS_TOKEN` | Intercom contacts, tags, events, conversations, renewal emails |
+| `INTERCOM_DEFAULT_ADMIN_EMAIL` | Default Intercom teammate for renewal emails (`hello@bullmania.com` if unset) |
 | `DOCUSEAL_API_TOKEN` | Create DocuSeal submissions |
 | `SLACK_DOCUSEAL_WEBHOOK` | Slack alerts for agreement signing events |
 | `THRIVECART_API_KEY` | Grant course access after agreement signed |
@@ -540,6 +541,53 @@ Triggers crypto renewal email sequence in ConvertKit (tag `12168728`).
 
 ---
 
+### HubSpot — renewal emails (Intercom)
+
+CRM card **Renewal Email** plus workflow action **Draft Crypto Renewal Email (Intercom)**. Emails are sent through Intercom as the selected teammate. Intercom has no unsent-email draft API, so `mode: "draft"` writes an internal Intercom contact note (and a HubSpot timeline note) for review instead of emailing the customer.
+
+#### `GET /api/hubspot/renewal-email/options`
+
+Returns Intercom teammates and template metadata for the CRM card.
+
+#### `POST /api/hubspot/renewal-email`
+
+| `mode` | Who uses it | Result |
+|--------|-------------|--------|
+| `preview` | CRM card | Render subject/body, no side effects |
+| `draft` | CRM card **Save draft**; **all HubSpot workflow calls** | Internal Intercom + HubSpot notes. Customer is not emailed |
+| `send` | CRM card **Send email** only | Intercom admin email (`template: personal`) |
+
+Workflow requests are forced to `draft` and template `crypto`, even if `mode` is sent.
+
+**Templates**
+
+| ID | Use |
+|----|-----|
+| `crypto` | Locked-in rate, crypto wallet + transaction hash (workflow default) |
+| `balance` | Remaining balance; optional card checkout link + crypto |
+| `due` | Short payment-due reminder (crypto) |
+
+**Body (card)**
+
+```json
+{
+  "mode": "send",
+  "contactId": "12345",
+  "email": "user@example.com",
+  "firstName": "Brenton",
+  "price": "1164",
+  "renewalDate": "2026-10-01",
+  "templateId": "crypto",
+  "adminId": "394051",
+  "subject": "optional override",
+  "body": "optional override"
+}
+```
+
+`senderEmail` can be used instead of `adminId` (workflow). Defaults to `INTERCOM_DEFAULT_ADMIN_EMAIL` / `hello@bullmania.com`. Prefill properties on the card: `email`, `firstname`, `price`, `renewal_date`.
+
+---
+
 #### `POST /api/hubspot/vsl-video-watch`
 
 Tracks VSL watch progress on HubSpot contact property `vsl_video_watch` (stored as 0–1 decimal).
@@ -981,6 +1029,12 @@ Agreement signed (DocuSeal webhook)
         IF form.completed:
           HubSpot update + ThriveCart 187845 + ConvertKit 11448082
           + Slack access/error follow-up
+
+Renewal email (HubSpot)
+  → CRM card /api/hubspot/renewal-email
+      preview → edit subject/body → draft (Intercom note) or send (Intercom email)
+  → workflow Draft Crypto Renewal Email (Intercom)
+      always draft, crypto template, on behalf of senderEmail
 
 VSL progress (frontend)
   → /api/hubspot/vsl-video-watch
