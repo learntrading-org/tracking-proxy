@@ -42,9 +42,9 @@ export async function POST(request) {
       payload.mode || getInputValue(payload, "mode") || ""
     ).toLowerCase();
 
-    // Workflow crypto action is draft-only until support is ready to send.
+    // Workflow crypto action emails the contact. Card can still preview or draft.
     if (workflow) {
-      mode = "draft";
+      mode = "send";
     } else if (rawMode === "preview" || rawMode === "draft" || rawMode === "send") {
       mode = rawMode;
     }

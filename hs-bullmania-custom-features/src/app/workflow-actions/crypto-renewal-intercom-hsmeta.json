@@ -1,5 +1,5 @@
 {
-  "uid": "crypto_renewal_intercom_draft",
+  "uid": "crypto_renewal_intercom",
   "type": "workflow-action",
   "config": {
     "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/renewal-email",
@@ -59,9 +59,9 @@
     "labels": {
       "en": {
         "appDisplayName": "HS Bullmania Custom Features",
-        "actionName": "Draft Crypto Renewal Email (Intercom)",
-        "actionDescription": "Creates an Intercom draft note with the crypto renewal email for review. Does not email the contact.",
-        "actionCardContent": "Draft crypto renewal email to {{email}} on behalf of {{senderEmail}} (price: {{price}})",
+        "actionName": "Send Crypto Renewal Email (Intercom)",
+        "actionDescription": "Sends the crypto renewal email via Intercom on behalf of a support teammate.",
+        "actionCardContent": "Send crypto renewal email to {{email}} on behalf of {{senderEmail}} (price: {{price}})",
         "inputFieldLabels": {
           "email": "Email",
           "firstName": "First Name",
@@ -74,14 +74,14 @@
           "firstName": "The contact's first name",
           "price": "Map to the contact price property (Renewal Price / Instalment)",
           "renewalDate": "Map to the contact renewal_date property",
-          "senderEmail": "Intercom teammate email to draft on behalf of. Defaults to hello@bullmania.com if blank."
+          "senderEmail": "Intercom teammate email to send on behalf of. Defaults to hello@bullmania.com if blank."
         },
         "outputFieldLabels": {
           "status": "Status",
           "message": "Message",
           "mode": "Delivery mode",
           "intercomContactId": "Intercom contact ID",
-          "intercomId": "Intercom note ID",
+          "intercomId": "Intercom message ID",
           "adminEmail": "Sender email"
         }
       }

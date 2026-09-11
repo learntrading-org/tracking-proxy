@@ -543,7 +543,7 @@ Triggers crypto renewal email sequence in ConvertKit (tag `12168728`).
 
 ### HubSpot — renewal emails (Intercom)
 
-CRM card **Renewal Email** plus workflow action **Draft Crypto Renewal Email (Intercom)**. Emails are sent through Intercom as the selected teammate. Intercom has no unsent-email draft API, so `mode: "draft"` writes an internal Intercom contact note (and a HubSpot timeline note) for review instead of emailing the customer.
+CRM card **Renewal Email** plus workflow action **Send Crypto Renewal Email (Intercom)**. Emails are sent through Intercom as the selected teammate. The card can still save an internal Intercom/HubSpot note via `mode: "draft"` (Intercom has no unsent-email draft API).
 
 #### `GET /api/hubspot/renewal-email/options`
 
@@ -554,10 +554,10 @@ Returns Intercom teammates and template metadata for the CRM card.
 | `mode` | Who uses it | Result |
 |--------|-------------|--------|
 | `preview` | CRM card | Render subject/body, no side effects |
-| `draft` | CRM card **Save draft**; **all HubSpot workflow calls** | Internal Intercom + HubSpot notes. Customer is not emailed |
-| `send` | CRM card **Send email** only | Intercom admin email (`template: personal`) |
+| `draft` | CRM card **Save draft** | Internal Intercom + HubSpot notes. Customer is not emailed |
+| `send` | CRM card **Send email**; **all HubSpot workflow calls** | Intercom admin email (`template: personal`) |
 
-Workflow requests are forced to `draft` and template `crypto`, even if `mode` is sent.
+Workflow requests are forced to `send` and template `crypto`.
 
 **Templates**
 
@@ -1033,8 +1033,8 @@ Agreement signed (DocuSeal webhook)
 Renewal email (HubSpot)
   → CRM card /api/hubspot/renewal-email
       preview → edit subject/body → draft (Intercom note) or send (Intercom email)
-  → workflow Draft Crypto Renewal Email (Intercom)
-      always draft, crypto template, on behalf of senderEmail
+  → workflow Send Crypto Renewal Email (Intercom)
+      always send, crypto template, on behalf of senderEmail
 
 VSL progress (frontend)
   → /api/hubspot/vsl-video-watch
