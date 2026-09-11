@@ -167,7 +167,8 @@ function cryptoPayStepsText(includeHeading = true) {
 }
 
 function htmlP(inner) {
-  return `<p>${inner}</p>`;
+  // Intercom inbox strips <p> margins; <br><br> is what actually shows as a blank line.
+  return `${inner}<br><br>`;
 }
 
 function htmlStrong(text) {
@@ -181,7 +182,7 @@ function htmlLink(url) {
 }
 
 function htmlOl(items) {
-  return `<ol>${items.map((item) => `<li>${item}</li>`).join("")}</ol>`;
+  return items.map((item, index) => `${index + 1}. ${item}`).join("<br>") + "<br><br>";
 }
 
 function cryptoPayStepsHtml() {
@@ -365,7 +366,7 @@ export function textToHtml(text) {
         items.push(formatInlineHtml(lines[i].replace(/^\s*\d+\.\s+/, "")));
         i += 1;
       }
-      blocks.push(`<ol>${items.map((item) => `<li>${item}</li>`).join("")}</ol>`);
+      blocks.push(items.map((item, index) => `${index + 1}. ${item}`).join("<br>"));
       continue;
     }
 
@@ -375,7 +376,7 @@ export function textToHtml(text) {
         items.push(formatInlineHtml(lines[i].replace(/^\s*[-*]\s+/, "")));
         i += 1;
       }
-      blocks.push(`<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`);
+      blocks.push(items.map((item) => `• ${item}`).join("<br>"));
       continue;
     }
 
@@ -389,10 +390,10 @@ export function textToHtml(text) {
       paragraph.push(formatInlineHtml(lines[i]));
       i += 1;
     }
-    blocks.push(`<p>${paragraph.join("<br>")}</p>`);
+    blocks.push(paragraph.join("<br>"));
   }
 
-  return blocks.join("");
+  return blocks.join("<br><br>");
 }
 
 export async function listIntercomAdmins(token) {
