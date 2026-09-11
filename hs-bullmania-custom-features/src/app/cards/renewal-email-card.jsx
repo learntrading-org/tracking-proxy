@@ -232,7 +232,7 @@ const RenewalEmailCard = ({ context, actions }) => {
       .then(({ status, data }) => {
         if (status >= 200 && status < 300 && data.status === "SUCCESS") {
           setStatusType("success");
-          setStatusMessage(data.message || (mode === "draft" ? "Draft saved in Intercom." : "Email sent."));
+          setStatusMessage(data.message || "Email sent.");
           if (actions?.refreshObjectProperties) {
             actions.refreshObjectProperties();
           }
@@ -351,9 +351,6 @@ const RenewalEmailCard = ({ context, actions }) => {
       <Flex direction="row" gap="small">
         <Button onClick={() => setPreviewTick((tick) => tick + 1)} disabled={busy}>
           Reset to template
-        </Button>
-        <Button onClick={() => submit("draft")} disabled={busy || !email}>
-          {submitting ? "Working..." : "Save draft"}
         </Button>
         <Button variant="primary" onClick={() => submit("send")} disabled={busy || !email}>
           {submitting ? "Working..." : "Send email"}

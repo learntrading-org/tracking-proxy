@@ -3,7 +3,6 @@ import {
   CORS_HEADERS,
   addHubSpotNote,
   displayFirstName,
-  draftIntercomNote,
   findOrCreateIntercomContact,
   formatAmount,
   formatDate,
@@ -43,11 +42,14 @@ export async function POST(request) {
       payload.mode || getInputValue(payload, "mode") || ""
     ).toLowerCase();
 
-    // Workflow crypto action emails the contact. Card can still preview or draft.
+    // Workflow crypto action emails the contact. Card can preview or send.
     if (workflow) {
       mode = "send";
-    } else if (rawMode === "preview" || rawMode === "draft" || rawMode === "send") {
+    } else if (rawMode === "preview" || rawMode === "send") {
       mode = rawMode;
+    } else if (rawMode === "draft") {
+      const message = "Drafts are not stored. Preview in the card, then send.";
+      return NextResponse.json({ error: message }, { status: 400, headers: CORS_HEADERS });
     }
 
     email = String(
@@ -166,32 +168,18 @@ export async function POST(request) {
         : NextResponse.json({ error: message }, { status: 400, headers: CORS_HEADERS });
     }
 
-    let intercomResult;
-    if (mode === "draft") {
-      intercomResult = await draftIntercomNote(intercomToken, {
-        admin: onBehalfAdmin,
-        contact,
-        subject,
-        body,
-      });
-    } else {
-      intercomResult = await sendIntercomEmail(intercomToken, {
-        admin: onBehalfAdmin,
-        contact,
-        subject,
-        html,
-      });
-    }
+    const intercomResult = await sendIntercomEmail(intercomToken, {
+      admin: onBehalfAdmin,
+      contact,
+      subject,
+      html,
+    });
 
     const hubspotNote = [
-      mode === "draft" ? "Drafted" : "Sent",
-      "Intercom renewal email",
-      `from ${SENDER_EMAIL} on behalf of ${onBehalfAdmin.name}.`,
+      `Sent Intercom renewal email from ${SENDER_EMAIL} on behalf of ${onBehalfAdmin.name}.`,
       `Subject: ${subject}`,
       `Amount: ${formatAmount(price) || price}`,
       formatDate(renewalDate) ? `Renewal date: ${formatDate(renewalDate)}` : "",
-      "",
-      body,
     ]
       .filter(Boolean)
       .join("\n");
@@ -202,10 +190,7 @@ export async function POST(request) {
       hubspotNote
     );
 
-    const successMessage =
-      mode === "draft"
-        ? `Draft saved in Intercom for ${email} on behalf of ${onBehalfAdmin.name}`
-        : `Email sent to ${email} from ${SENDER_EMAIL} on behalf of ${onBehalfAdmin.name}`;
+    const successMessage = `Email sent to ${email} from ${SENDER_EMAIL} on behalf of ${onBehalfAdmin.name}`;
 
     if (workflow) {
       return workflowResponse({

@@ -540,37 +540,6 @@ async function postIntercomWithRetry(url, headers, payload, errorLabel) {
   throw new Error(`${errorLabel}: ${lastError}`);
 }
 
-export async function draftIntercomNote(token, { admin, contact, subject, body }) {
-  const headers = intercomHeaders(token);
-  const noteBody = [
-    "<p><strong>DRAFT — Renewal email (not sent to the customer)</strong></p>",
-    `<p>From: ${escapeHtml(admin.name)} (${escapeHtml(admin.email)})<br>`,
-    `To: ${escapeHtml(contact.email || "")}<br>`,
-    `Subject: ${escapeHtml(subject)}</p>`,
-    "<hr>",
-    textToHtml(body),
-    "<p><em>Review this draft, then send from the HubSpot Renewal Email card or Intercom inbox.</em></p>",
-  ].join("");
-
-  const res = await fetch(
-    `https://api.intercom.io/contacts/${contact.id}/notes`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        body: noteBody,
-        admin_id: String(admin.id),
-      }),
-    }
-  );
-  if (!res.ok) {
-    throw new Error(
-      `Intercom Draft Note Failed: ${res.status} ${await res.text()}`
-    );
-  }
-  return res.json();
-}
-
 export async function addHubSpotNote(token, contactId, body) {
   if (!token || !contactId) return null;
   const res = await fetch("https://api.hubapi.com/crm/v3/objects/notes", {
