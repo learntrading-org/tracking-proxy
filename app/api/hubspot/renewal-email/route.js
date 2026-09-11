@@ -110,7 +110,10 @@ export async function POST(request) {
     });
     const subject = String(customSubject || rendered.subject).trim();
     const body = String(customBody || rendered.body).trim();
-    const html = customBody ? textToHtml(body) : rendered.html;
+    const html =
+      customBody && customBody.trim() !== rendered.body.trim()
+        ? textToHtml(body)
+        : rendered.html;
 
     if (mode === "preview") {
       return NextResponse.json(

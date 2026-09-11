@@ -149,13 +149,49 @@ export function firstNameFromAdmin(admin) {
   return email.split("@")[0] || "";
 }
 
-function cryptoPayBlock() {
-  return [
-    "Send payment to an official wallet listed here:",
-    CRYPTO_PAYMENT_URL,
-    "",
-    "Then reply to this email with your transaction hash URL. We'll credit your account right away.",
-  ].join("\n");
+function linkLabel(url) {
+  return String(url || "")
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
+}
+
+function cryptoPayStepsText(includeHeading = true) {
+  const lines = [
+    "1. Send payment to an official wallet: " + CRYPTO_PAYMENT_URL,
+    "2. Reply to this email with your transaction hash URL. We'll credit your account right away.",
+  ];
+  if (includeHeading) {
+    return ["How to renew with crypto:", ...lines].join("\n");
+  }
+  return lines.join("\n");
+}
+
+function htmlP(inner) {
+  return `<p>${inner}</p>`;
+}
+
+function htmlStrong(text) {
+  return `<strong>${escapeHtml(text)}</strong>`;
+}
+
+function htmlLink(url) {
+  const href = String(url || "").trim();
+  if (!href) return "";
+  return `<a href="${escapeHtml(href)}">${escapeHtml(linkLabel(href))}</a>`;
+}
+
+function htmlOl(items) {
+  return `<ol>${items.map((item) => `<li>${item}</li>`).join("")}</ol>`;
+}
+
+function cryptoPayStepsHtml() {
+  return (
+    htmlP(htmlStrong("How to renew with crypto:")) +
+    htmlOl([
+      `Send payment to an official wallet: ${htmlLink(CRYPTO_PAYMENT_URL)}`,
+      "Reply to this email with your transaction hash URL. We'll credit your account right away.",
+    ])
+  );
 }
 
 export function renderRenewalEmail({
@@ -171,32 +207,83 @@ export function renderRenewalEmail({
   const dateLabel = formatDate(renewalDate);
   const dueOn = dateLabel ? ` on ${dateLabel}` : " soon";
   const cardLink = String(checkoutLink || "").trim();
+  const amountHtml = amount ? htmlStrong(amount) : "";
+  const dateHtml = dateLabel ? htmlStrong(dateLabel) : "";
 
   let body = "";
+  let html = "";
 
   if (template.id === "balance") {
-    const cardBlock = cardLink
-      ? `Pay by card:\n${cardLink}\n\nOr pay with crypto:\n`
-      : "Pay with crypto:\n";
+    const intro = `Your remaining BullMania membership balance of ${amount} is due${dueOn}. Completing this keeps your membership active and your locked-in rate.`;
+    const payLines = cardLink
+      ? [
+          "How to pay:",
+          `1. Pay by card: ${cardLink}`,
+          `2. Or send crypto to an official wallet: ${CRYPTO_PAYMENT_URL}`,
+          "3. If you pay with crypto, reply with your transaction hash URL so we can credit your account.",
+        ]
+      : [
+          "How to pay:",
+          `1. Send crypto to an official wallet: ${CRYPTO_PAYMENT_URL}`,
+          "2. Reply with your transaction hash URL so we can credit your account.",
+        ];
     body = [
       `Hi ${name},`,
       "",
-      `A reminder that your remaining BullMania membership balance of ${amount} is due${dueOn}. Completing this keeps your membership active and your locked-in rate.`,
+      intro,
       "",
-      `${cardBlock}${cryptoPayBlock()}`,
+      ...payLines,
       "",
-      "Questions? Just reply.",
+      "Questions? Just reply to this email.",
+      "",
+      "Thanks for being part of the BullMania community.",
     ].join("\n");
+
+    const payItems = cardLink
+      ? [
+          `Pay by card: ${htmlLink(cardLink)}`,
+          `Or send crypto to an official wallet: ${htmlLink(CRYPTO_PAYMENT_URL)}`,
+          "If you pay with crypto, reply with your transaction hash URL so we can credit your account.",
+        ]
+      : [
+          `Send crypto to an official wallet: ${htmlLink(CRYPTO_PAYMENT_URL)}`,
+          "Reply with your transaction hash URL so we can credit your account.",
+        ];
+    html = [
+      htmlP(`Hi ${escapeHtml(name)},`),
+      htmlP(
+        `Your remaining BullMania membership balance of ${amountHtml} is due${
+          dateHtml ? ` on ${dateHtml}` : " soon"
+        }. Completing this keeps your membership active and your locked-in rate.`
+      ),
+      htmlP(htmlStrong("How to pay:")),
+      htmlOl(payItems),
+      htmlP("Questions? Just reply to this email."),
+      htmlP("Thanks for being part of the BullMania community."),
+    ].join("");
   } else if (template.id === "due") {
     body = [
       `Hi ${name},`,
       "",
       `Your BullMania subscription payment of ${amount} is due${dueOn}. Please complete your renewal soon so you keep your locked-in rate and access.`,
       "",
-      cryptoPayBlock(),
+      cryptoPayStepsText(),
       "",
-      "Need help? Just reply.",
+      "Need help? Just reply to this email.",
+      "",
+      "Thanks for being part of the BullMania community.",
     ].join("\n");
+    html = [
+      htmlP(`Hi ${escapeHtml(name)},`),
+      htmlP(
+        `Your BullMania subscription payment of ${amountHtml} is due${
+          dateHtml ? ` on ${dateHtml}` : " soon"
+        }. Please complete your renewal soon so you keep your locked-in rate and access.`
+      ),
+      cryptoPayStepsHtml(),
+      htmlP("Need help? Just reply to this email."),
+      htmlP("Thanks for being part of the BullMania community."),
+    ].join("");
   } else {
     const renews = dateLabel ? ` on ${dateLabel}` : " soon";
     const completeBy = dateLabel ? ` before ${dateLabel}` : " soon";
@@ -207,19 +294,38 @@ export function renderRenewalEmail({
       "",
       `Please complete your crypto payment${completeBy} so you keep this rate and uninterrupted access.`,
       "",
-      cryptoPayBlock(),
+      cryptoPayStepsText(),
       "",
       "If your account expires, current (higher) standard rates apply.",
       "",
-      "Questions? Just reply.",
+      "Questions? Just reply to this email.",
+      "",
+      "Thanks for being part of the BullMania community.",
     ].join("\n");
+    html = [
+      htmlP(`Hi ${escapeHtml(name)},`),
+      htmlP(
+        `Your BullMania subscription renews${
+          dateHtml ? ` on ${dateHtml}` : " soon"
+        } at your locked-in rate of ${amountHtml}.`
+      ),
+      htmlP(
+        `Please complete your crypto payment${
+          dateLabel ? ` before ${dateHtml}` : " soon"
+        } so you keep this rate and uninterrupted access.`
+      ),
+      cryptoPayStepsHtml(),
+      htmlP("If your account expires, current (higher) standard rates apply."),
+      htmlP("Questions? Just reply to this email."),
+      htmlP("Thanks for being part of the BullMania community."),
+    ].join("");
   }
 
   return {
     templateId: template.id,
     subject: template.subject,
     body: body.trim(),
-    html: textToHtml(body),
+    html,
     amount,
     renewalDateLabel: dateLabel,
   };
@@ -233,15 +339,60 @@ export function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function formatInlineHtml(text) {
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+      const label = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      return `<a href="${url}">${label}</a>`;
+    });
+}
+
 export function textToHtml(text) {
-  const withLinks = escapeHtml(String(text || "").trim()).replace(
-    /(https?:\/\/[^\s<]+)/g,
-    '<a href="$1">$1</a>'
-  );
-  return withLinks
-    .split(/\n\n+/)
-    .map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)
-    .join("");
+  const lines = String(text || "").replace(/\r\n/g, "\n").trim().split("\n");
+  const blocks = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    if (!lines[i].trim()) {
+      i += 1;
+      continue;
+    }
+
+    if (/^\s*\d+\.\s+/.test(lines[i])) {
+      const items = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(formatInlineHtml(lines[i].replace(/^\s*\d+\.\s+/, "")));
+        i += 1;
+      }
+      blocks.push(`<ol>${items.map((item) => `<li>${item}</li>`).join("")}</ol>`);
+      continue;
+    }
+
+    if (/^\s*[-*]\s+/.test(lines[i])) {
+      const items = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        items.push(formatInlineHtml(lines[i].replace(/^\s*[-*]\s+/, "")));
+        i += 1;
+      }
+      blocks.push(`<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`);
+      continue;
+    }
+
+    const paragraph = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !/^\s*\d+\.\s+/.test(lines[i]) &&
+      !/^\s*[-*]\s+/.test(lines[i])
+    ) {
+      paragraph.push(formatInlineHtml(lines[i]));
+      i += 1;
+    }
+    blocks.push(`<p>${paragraph.join("<br>")}</p>`);
+  }
+
+  return blocks.join("");
 }
 
 export async function listIntercomAdmins(token) {
