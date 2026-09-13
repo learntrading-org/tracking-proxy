@@ -878,9 +878,8 @@ Stripe webhook. Verifies signature, then alerts Slack exclusively on successful 
 
 | `event.type` | Action |
 |--------------|--------|
-| `checkout.session.completed` | Slack checkout succeeded alert (if amount matches) |
 | `invoice.payment_succeeded` | Slack payment / subscription renewal succeeded alert (if amount matches) |
-| `payment_intent.succeeded` | Slack direct payment succeeded alert (non-invoice, if amount matches) |
+| `checkout.session.completed` | Slack one-time checkout succeeded alert (if amount matches; subscription checkouts are handled by `invoice.payment_succeeded`) |
 | Any other Stripe event / amount mismatch | Acknowledged (`200`), no alert |
 
 **Alert content (Slack Block Kit)**

@@ -162,7 +162,7 @@ export async function POST(req) {
         'checkout.session.completed',
         'invoice.payment_succeeded',
         // 'invoice.payment_failed',
-        'payment_intent.succeeded',
+        // 'payment_intent.succeeded',
         // 'payment_intent.payment_failed',
         // 'customer.subscription.deleted',
     ];
@@ -173,8 +173,8 @@ export async function POST(req) {
 
     const data = event.data.object;
 
-    // Avoid duplicate alerts: if payment_intent belongs to an invoice, let invoice.* events handle it
-    if (event.type === 'payment_intent.succeeded' && data.invoice) {
+    // Avoid duplicate alerts: if checkout session is for a subscription, let invoice.payment_succeeded handle it
+    if (event.type === 'checkout.session.completed' && (data.mode === 'subscription' || data.subscription)) {
         return new Response('Skipped (handled by invoice event)', { status: 200 });
     }
 
@@ -185,10 +185,7 @@ export async function POST(req) {
     let currency = data.currency || 'usd';
 
     if (event.type === 'checkout.session.completed') {
-        messageTitle =
-            data.mode === 'subscription'
-                ? 'Stripe Subscription Checkout Succeeded'
-                : 'Stripe Checkout Succeeded';
+        messageTitle = 'Stripe Checkout Succeeded';
         rawAmount = data.amount_total;
     } else if (event.type === 'invoice.payment_succeeded') {
         const isSubscription = Boolean(data.subscription);
@@ -199,9 +196,6 @@ export async function POST(req) {
                 ? 'Stripe Subscription Payment Succeeded'
                 : 'Stripe Invoice Payment Succeeded';
         rawAmount = data.amount_paid ?? data.total ?? data.amount_due;
-    } else if (event.type === 'payment_intent.succeeded') {
-        messageTitle = 'Stripe Payment Succeeded';
-        rawAmount = data.amount_received ?? data.amount;
     }
 
     // Only alert for successful payments matching allowed amounts (in cents):
