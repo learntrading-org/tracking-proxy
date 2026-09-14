@@ -31,7 +31,7 @@ Typical callers:
 | `HUBSPOT_ACCESS_TOKEN` | HubSpot CRM read/write (contacts, tickets) |
 | `CONVERTKIT_API_SECRET` | ConvertKit subscribe / tag / unsubscribe |
 | `INTERCOM_ACCESS_TOKEN` | Intercom contacts, tags, events, conversations, renewal emails |
-| `INTERCOM_DEFAULT_ADMIN_EMAIL` | Default Intercom teammate to assign renewal conversations to (`hello@bullmania.com` if unset) |
+| `INTERCOM_DEFAULT_ADMIN_EMAIL` | Default Send on behalf of teammate (`john@learntrading.com` if unset). Allowed: john@learntrading.com, jonathan@learntrading.com, mauro@bullmania.com |
 | `INTERCOM_SENDER_EMAIL` | Workspace inbound From address shown in HubSpot notes (`hello@bullmania.com` if unset). Intercom must keep Sending address on Inbound address. |
 | `DOCUSEAL_API_TOKEN` | Create DocuSeal submissions |
 | `SLACK_DOCUSEAL_WEBHOOK` | Slack alerts for agreement signing events |
@@ -584,7 +584,7 @@ Workflow requests are forced to `send` and template `crypto`.
 }
 ```
 
-`senderEmail` can be used instead of `adminId` (workflow). Defaults to `INTERCOM_DEFAULT_ADMIN_EMAIL` / `hello@bullmania.com`. Prefill properties on the card: `email`, `firstname`, `price`, `renewal_date`.
+`senderEmail` can be used instead of `adminId` (workflow). Must be one of `john@learntrading.com`, `jonathan@learntrading.com`, or `mauro@bullmania.com`. Defaults to `john@learntrading.com`. Prefill properties on the card: `email`, `firstname`, `price`, `renewal_date`.
 
 ---
 

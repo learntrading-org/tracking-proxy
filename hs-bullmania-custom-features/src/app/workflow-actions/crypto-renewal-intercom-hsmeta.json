@@ -74,7 +74,7 @@
           "firstName": "The contact's first name",
           "price": "Map to the contact price property (Renewal Price / Instalment)",
           "renewalDate": "Map to the contact renewal_date property",
-          "senderEmail": "Intercom teammate who authors the email. Customers still receive it from hello@bullmania.com. Defaults to hello@bullmania.com if blank."
+          "senderEmail": "Must be john@learntrading.com, jonathan@learntrading.com, or mauro@bullmania.com. Customers still receive it from hello@bullmania.com. Defaults to john@learntrading.com if blank."
         },
         "outputFieldLabels": {
           "status": "Status",

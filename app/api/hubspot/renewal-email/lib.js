@@ -3,9 +3,15 @@
 export const INTERCOM_VERSION = "2.14";
 export const CRYPTO_PAYMENT_URL = "https://bullmania.com/crypto-payment";
 export const DEFAULT_ADMIN_EMAIL =
-  process.env.INTERCOM_DEFAULT_ADMIN_EMAIL || "hello@bullmania.com";
+  process.env.INTERCOM_DEFAULT_ADMIN_EMAIL || "john@learntrading.com";
 export const SENDER_EMAIL =
-  process.env.INTERCOM_SENDER_EMAIL || DEFAULT_ADMIN_EMAIL;
+  process.env.INTERCOM_SENDER_EMAIL || "hello@bullmania.com";
+
+export const ALLOWED_ON_BEHALF_EMAILS = [
+  "john@learntrading.com",
+  "jonathan@learntrading.com",
+  "mauro@bullmania.com",
+];
 
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -405,9 +411,13 @@ export async function listIntercomAdmins(token) {
     throw new Error(`Intercom List Admins Failed: ${res.status} ${await res.text()}`);
   }
   const data = await res.json();
+  const allowed = new Map(
+    ALLOWED_ON_BEHALF_EMAILS.map((email, index) => [email.toLowerCase(), index])
+  );
   const admins = Array.isArray(data.admins) ? data.admins : [];
   return admins
     .filter((admin) => admin && admin.id && admin.email && admin.type !== "bot")
+    .filter((admin) => allowed.has(String(admin.email).toLowerCase()))
     .map((admin) => ({
       id: String(admin.id),
       name: admin.name || admin.email,
@@ -416,24 +426,22 @@ export async function listIntercomAdmins(token) {
       away: Boolean(admin.away_mode_enabled),
       hasInboxSeat: admin.has_inbox_seat !== false,
     }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort(
+      (a, b) =>
+        allowed.get(a.email.toLowerCase()) - allowed.get(b.email.toLowerCase())
+    );
 }
 
 export function resolveAdmin(admins, { adminId, senderEmail } = {}) {
   if (!admins?.length) return null;
   if (adminId) {
-    const match = admins.find((admin) => String(admin.id) === String(adminId));
-    if (match) return match;
+    return admins.find((admin) => String(admin.id) === String(adminId)) || null;
   }
   const email = String(senderEmail || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
-  if (email) {
-    const match = admins.find((admin) => admin.email.toLowerCase() === email);
-    if (match) return match;
-  }
-  const fallback = admins.find(
-    (admin) => admin.email.toLowerCase() === DEFAULT_ADMIN_EMAIL.toLowerCase()
-  );
-  return fallback || admins[0] || null;
+  const match = admins.find((admin) => admin.email.toLowerCase() === email);
+  if (match) return match;
+  if (senderEmail) return null;
+  return admins[0] || null;
 }
 
 export async function findOrCreateIntercomContact(token, { email, firstName }) {
