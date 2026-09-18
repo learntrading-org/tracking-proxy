@@ -7,11 +7,18 @@ export const DEFAULT_ADMIN_EMAIL =
 export const SENDER_EMAIL =
   process.env.INTERCOM_SENDER_EMAIL || "hello@bullmania.com";
 
-export const ALLOWED_ON_BEHALF_EMAILS = [
-  "john@learntrading.com",
-  "jonathan@learntrading.com",
-  "mauro@bullmania.com",
+export const ON_BEHALF_ADMINS = [
+  { name: "John Pilla", email: "john@learntrading.com" },
+  { name: "Jonathan Blackburn", email: "jonathan@learntrading.com" },
+  { name: "Mauro Fabijanic", email: "mauro@bullmania.com" },
 ];
+
+export const ALLOWED_ON_BEHALF_EMAILS = ON_BEHALF_ADMINS.map(
+  (admin) => admin.email
+);
+
+const ADMIN_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+let adminCache = { admins: null, expiresAt: 0 };
 
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -402,7 +409,22 @@ export function textToHtml(text) {
   return blocks.join("<br><br>");
 }
 
+export function listOnBehalfAdmins() {
+  return ON_BEHALF_ADMINS.map((admin) => ({
+    id: admin.email,
+    name: admin.name,
+    email: admin.email,
+    firstName: firstNameFromAdmin(admin),
+    away: false,
+    hasInboxSeat: true,
+  }));
+}
+
 export async function listIntercomAdmins(token) {
+  if (adminCache.admins && Date.now() < adminCache.expiresAt) {
+    return adminCache.admins;
+  }
+
   const res = await fetch("https://api.intercom.io/admins", {
     method: "GET",
     headers: intercomHeaders(token),
@@ -415,7 +437,7 @@ export async function listIntercomAdmins(token) {
     ALLOWED_ON_BEHALF_EMAILS.map((email, index) => [email.toLowerCase(), index])
   );
   const admins = Array.isArray(data.admins) ? data.admins : [];
-  return admins
+  const filtered = admins
     .filter((admin) => admin && admin.id && admin.email && admin.type !== "bot")
     .filter((admin) => allowed.has(String(admin.email).toLowerCase()))
     .map((admin) => ({
@@ -430,12 +452,22 @@ export async function listIntercomAdmins(token) {
       (a, b) =>
         allowed.get(a.email.toLowerCase()) - allowed.get(b.email.toLowerCase())
     );
+
+  adminCache = { admins: filtered, expiresAt: Date.now() + ADMIN_CACHE_TTL_MS };
+  return filtered;
 }
 
 export function resolveAdmin(admins, { adminId, senderEmail } = {}) {
   if (!admins?.length) return null;
   if (adminId) {
-    return admins.find((admin) => String(admin.id) === String(adminId)) || null;
+    const needle = String(adminId).toLowerCase();
+    return (
+      admins.find(
+        (admin) =>
+          String(admin.id).toLowerCase() === needle ||
+          String(admin.email).toLowerCase() === needle
+      ) || null
+    );
   }
   const email = String(senderEmail || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
   const match = admins.find((admin) => admin.email.toLowerCase() === email);
