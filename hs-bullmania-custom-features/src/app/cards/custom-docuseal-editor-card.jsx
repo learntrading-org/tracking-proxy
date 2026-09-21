@@ -29,7 +29,7 @@ const PRESETS = {
     "Private Live Streams",
     "BullMania AI",
     "Private Market Analysis Videos",
-    "3 Private Coaching Session(s)"
+    "4 Private Coaching Sessions"
   ], null, 2),
   no_sessions: JSON.stringify([
     "BullMania Trading Courses",
@@ -50,7 +50,7 @@ const PRESETS = {
     "Private Live Streams",
     "BullMania AI",
     "Private Market Analysis Videos",
-    "3 Private Coaching Session(s)",
+    "4 Private Coaching Sessions",
     "2 Portfolio Review(s) by Ivan"
   ], null, 2)
 };
