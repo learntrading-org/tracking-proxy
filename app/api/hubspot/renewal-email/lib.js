@@ -40,9 +40,9 @@ export const TEMPLATES = [
   {
     id: "crypto",
     label: "Crypto renewal",
-    description: "Locked-in rate. Crypto wallet + transaction hash.",
+    description: "Locked-in rate. Crypto wallet + transaction hash. Optional card checkout link.",
     subject: "Your BullMania renewal is coming up",
-    extraFields: [],
+    extraFields: ["checkoutLink"],
   },
   {
     id: "balance",
@@ -54,9 +54,9 @@ export const TEMPLATES = [
   {
     id: "due",
     label: "Payment due",
-    description: "Short reminder that payment is due (crypto).",
+    description: "Short reminder that payment is due. Optional card checkout link.",
     subject: "Your BullMania payment is due",
-    extraFields: [],
+    extraFields: ["checkoutLink"],
   },
 ];
 
@@ -168,7 +168,15 @@ function linkLabel(url) {
     .replace(/\/$/, "");
 }
 
-function cryptoPayStepsText(includeHeading = true) {
+function cryptoPayStepsText(includeHeading = true, cardLink = "") {
+  if (cardLink) {
+    return [
+      "How to pay:",
+      `1. Pay by card: ${cardLink}`,
+      `2. Or send crypto to an official wallet: ${CRYPTO_PAYMENT_URL}`,
+      "3. If you pay with crypto, reply to this email with your transaction hash URL. We'll credit your account right away.",
+    ].join("\n");
+  }
   const lines = [
     "1. Send payment to an official wallet: " + CRYPTO_PAYMENT_URL,
     "2. Reply to this email with your transaction hash URL. We'll credit your account right away.",
@@ -198,7 +206,17 @@ function htmlOl(items) {
   return items.map((item, index) => `${index + 1}. ${item}`).join("<br>") + "<br><br>";
 }
 
-function cryptoPayStepsHtml() {
+function cryptoPayStepsHtml(cardLink = "") {
+  if (cardLink) {
+    return (
+      htmlP(htmlStrong("How to pay:")) +
+      htmlOl([
+        `Pay by card: ${htmlLink(cardLink)}`,
+        `Or send crypto to an official wallet: ${htmlLink(CRYPTO_PAYMENT_URL)}`,
+        "If you pay with crypto, reply to this email with your transaction hash URL. We'll credit your account right away.",
+      ])
+    );
+  }
   return (
     htmlP(htmlStrong("How to renew with crypto:")) +
     htmlOl([
@@ -281,7 +299,7 @@ export function renderRenewalEmail({
       "",
       `Your BullMania subscription payment of ${amount} is due${dueOn}. Please complete your renewal soon so you keep your locked-in rate and access.`,
       "",
-      cryptoPayStepsText(),
+      cryptoPayStepsText(true, cardLink),
       "",
       "Need help? Just reply to this email.",
       "",
@@ -294,21 +312,22 @@ export function renderRenewalEmail({
           dateHtml ? ` on ${dateHtml}` : " soon"
         }. Please complete your renewal soon so you keep your locked-in rate and access.`
       ),
-      cryptoPayStepsHtml(),
+      cryptoPayStepsHtml(cardLink),
       htmlP("Need help? Just reply to this email."),
       htmlP("Thanks for being part of the BullMania community."),
     ].join("");
   } else {
     const renews = dateLabel ? ` on ${dateLabel}` : " soon";
     const completeBy = dateLabel ? ` before ${dateLabel}` : " soon";
+    const paymentKind = cardLink ? "payment" : "crypto payment";
     body = [
       `Hi ${name},`,
       "",
       `Your BullMania subscription renews${renews} at your locked-in rate of ${amount}.`,
       "",
-      `Please complete your crypto payment${completeBy} so you keep this rate and uninterrupted access.`,
+      `Please complete your ${paymentKind}${completeBy} so you keep this rate and uninterrupted access.`,
       "",
-      cryptoPayStepsText(),
+      cryptoPayStepsText(true, cardLink),
       "",
       "If your account expires, current (higher) standard rates apply.",
       "",
@@ -324,11 +343,11 @@ export function renderRenewalEmail({
         } at your locked-in rate of ${amountHtml}.`
       ),
       htmlP(
-        `Please complete your crypto payment${
+        `Please complete your ${cardLink ? "payment" : "crypto payment"}${
           dateLabel ? ` before ${dateHtml}` : " soon"
         } so you keep this rate and uninterrupted access.`
       ),
-      cryptoPayStepsHtml(),
+      cryptoPayStepsHtml(cardLink),
       htmlP("If your account expires, current (higher) standard rates apply."),
       htmlP("Questions? Just reply to this email."),
       htmlP("Thanks for being part of the BullMania community."),
