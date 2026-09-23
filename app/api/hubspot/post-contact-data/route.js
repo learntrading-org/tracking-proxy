@@ -168,25 +168,30 @@ export async function POST(request) {
             }
         }
 
-        // 3. Add Tag
-        if (contactId) {
-            const tagToApply = phoneSaved ? WHATSAPP_CONNECT_TAG_ID : LEAD_EMAIL_TAG_ID;
-            console.log(`Applying tag ${tagToApply} (${phoneSaved ? "WhatsApp Connect" : "Lead Email"}) to contact ${contactId}`);
-
+        // Helper to apply a single Intercom tag to the contact
+        const applyTag = async (tagId, tagName) => {
+            console.log(`Applying tag ${tagId} (${tagName}) to contact ${contactId}`);
             const tagRes = await fetch(`https://api.intercom.io/contacts/${contactId}/tags`, {
                 method: "POST",
                 headers,
-                body: JSON.stringify({
-                    id: tagToApply
-                })
+                body: JSON.stringify({ id: tagId })
             });
-
             if (!tagRes.ok) {
                 const errText = await tagRes.text();
-                console.error(`Intercom Tag Failed: ${tagRes.status} ${errText}`);
-                throw new Error(`Intercom Tag Failed: ${tagRes.status}`);
+                console.error(`Intercom Tag Failed [${tagName}]: ${tagRes.status} ${errText}`);
+                throw new Error(`Intercom Tag Failed [${tagName}]: ${tagRes.status}`);
             }
-            console.log("Tag applied successfully.");
+            console.log(`Tag [${tagName}] applied successfully.`);
+        };
+
+        // 3. Add Tags
+        // Always apply Lead Email tag.
+        // If phone was saved, also apply WhatsApp Connect tag.
+        if (contactId) {
+            await applyTag(LEAD_EMAIL_TAG_ID, "Lead Email");
+            if (phoneSaved) {
+                await applyTag(WHATSAPP_CONNECT_TAG_ID, "WhatsApp Connect");
+            }
         } else {
             console.log("No contact ID found, skipping tagging.");
         }
