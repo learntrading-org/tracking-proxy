@@ -39,16 +39,6 @@ function toDateInput(value) {
   };
 }
 
-function hubspotUserEmail(context) {
-  const user = context?.user || {};
-  if (user.email) return String(user.email).toLowerCase();
-  if (Array.isArray(user.emails) && user.emails[0]) {
-    const first = user.emails[0];
-    return String(first.email || first).toLowerCase();
-  }
-  return "";
-}
-
 function parseJson(response) {
   return response.json().then((data) => ({ status: response.status, data }));
 }
@@ -93,17 +83,10 @@ const RenewalEmailCard = ({ context, actions }) => {
 
         const loadedAdmins = optionsPayload.data.admins || [];
         const loadedTemplates = optionsPayload.data.templates || [];
-        const userEmail = hubspotUserEmail(context);
-        const matchingAdmin = loadedAdmins.find(
-          (admin) => String(admin.email || "").toLowerCase() === userEmail
-        );
 
         if (cancelled) return;
         setAdmins(loadedAdmins);
         setTemplates(loadedTemplates);
-        setAdminId(
-          matchingAdmin?.id || optionsPayload.data.defaultAdminId || loadedAdmins[0]?.id || ""
-        );
         if (loadedTemplates[0]?.id) setTemplateId(loadedTemplates[0].id);
       } catch (err) {
         if (!cancelled) {
@@ -138,7 +121,7 @@ const RenewalEmailCard = ({ context, actions }) => {
     return () => {
       cancelled = true;
     };
-  }, [actions, context]);
+  }, [actions]);
 
   useEffect(() => {
     if (!ready || !email) return undefined;
@@ -288,6 +271,8 @@ const RenewalEmailCard = ({ context, actions }) => {
         <Select
           name="adminId"
           value={adminId}
+          placeholder="Select a teammate"
+          required={true}
           onChange={setAdminId}
           options={adminOptions.length ? adminOptions : [{ label: "Loading teammates...", value: "" }]}
         />
@@ -352,7 +337,7 @@ const RenewalEmailCard = ({ context, actions }) => {
         <Button onClick={() => setPreviewTick((tick) => tick + 1)} disabled={busy}>
           Reset to template
         </Button>
-        <Button variant="primary" onClick={() => submit("send")} disabled={busy || !email}>
+        <Button variant="primary" onClick={() => submit("send")} disabled={busy || !email || !adminId}>
           {submitting ? "Working..." : "Send email"}
         </Button>
       </Flex>
