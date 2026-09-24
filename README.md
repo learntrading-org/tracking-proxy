@@ -701,6 +701,24 @@ Always: `updated_captured_this_far = captured_this_far + payment_amount` (parse 
 
 ---
 
+#### `POST /api/hubspot/private-coaching-sessions`
+
+Reads `program_deliverables` and returns the integer in front of `Private Coaching`. Missing phrase, empty value, or no leading number → `0`.
+
+Matches text such as `4 Private Coaching Sessions` anywhere in a JSON array, a newline list, or a plain string. Case-insensitive. First match wins.
+
+```json
+{
+  "fields": {
+    "program_deliverables": "[\"BullMania Trading Courses\", \"4 Private Coaching Sessions\"]"
+  }
+}
+```
+
+→ `{ "outputFields": { "private_coaching_sessions": 4 } }`
+
+---
+
 ### HubSpot — DocuSeal agreements
 
 #### `POST /api/hubspot/docuseal-agreement`

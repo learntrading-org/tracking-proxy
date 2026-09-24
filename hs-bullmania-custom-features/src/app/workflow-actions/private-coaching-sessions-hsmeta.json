@@ -1,0 +1,47 @@
+{
+  "uid": "private_coaching_sessions_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/private-coaching-sessions",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "program_deliverables",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": ["OBJECT_PROPERTY"],
+        "isRequired": true
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Private Coaching Sessions Count",
+        "actionDescription": "Reads Program Deliverables and returns the number of Private Coaching Sessions. Returns 0 when that line is missing.",
+        "actionCardContent": "Count Private Coaching Sessions from Program Deliverables",
+        "inputFieldLabels": {
+          "program_deliverables": "Program Deliverables"
+        },
+        "inputFieldDescriptions": {
+          "program_deliverables": "Contact property program_deliverables. Example line: \"4 Private Coaching Sessions\"."
+        },
+        "outputFieldLabels": {
+          "private_coaching_sessions": "Private Coaching Sessions"
+        }
+      }
+    },
+    "objectTypes": ["CONTACT"],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "private_coaching_sessions",
+          "type": "number",
+          "fieldType": "number"
+        }
+      }
+    ]
+  }
+}
