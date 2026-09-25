@@ -705,17 +705,19 @@ Always: `updated_captured_this_far = captured_this_far + payment_amount` (parse 
 
 Reads `program_deliverables` and returns the integer in front of `Private Coaching`. Missing phrase, empty value, or no leading number → `0`.
 
-Matches text such as `4 Private Coaching Sessions` anywhere in a JSON array, a newline list, or a plain string. Case-insensitive. First match wins.
+`coaching_sessions_only` is `true` only when the list has a single item and that item is the Private Coaching line (an upgrade purchase). A full package that includes coaching among other deliverables returns `false`.
+
+Matches text such as `4 Private Coaching Sessions` in a JSON array, a newline list, or a plain string. Case-insensitive. First coaching line wins.
 
 ```json
 {
   "fields": {
-    "program_deliverables": "[\"BullMania Trading Courses\", \"4 Private Coaching Sessions\"]"
+    "program_deliverables": "[\"4 Private Coaching Sessions\"]"
   }
 }
 ```
 
-→ `{ "outputFields": { "private_coaching_sessions": 4 } }`
+→ `{ "outputFields": { "private_coaching_sessions": 4, "coaching_sessions_only": true } }`
 
 ---
 

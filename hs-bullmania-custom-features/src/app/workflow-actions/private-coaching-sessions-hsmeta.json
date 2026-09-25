@@ -20,7 +20,7 @@
       "en": {
         "appDisplayName": "HS Bullmania Custom Features",
         "actionName": "Private Coaching Sessions Count",
-        "actionDescription": "Reads Program Deliverables and returns the number of Private Coaching Sessions. Returns 0 when that line is missing.",
+        "actionDescription": "Reads Program Deliverables and returns the Private Coaching Sessions count. Also returns whether that list is a coaching-only upgrade.",
         "actionCardContent": "Count Private Coaching Sessions from Program Deliverables",
         "inputFieldLabels": {
           "program_deliverables": "Program Deliverables"
@@ -29,7 +29,8 @@
           "program_deliverables": "Contact property program_deliverables. Example line: \"4 Private Coaching Sessions\"."
         },
         "outputFieldLabels": {
-          "private_coaching_sessions": "Private Coaching Sessions"
+          "private_coaching_sessions": "Private Coaching Sessions",
+          "coaching_sessions_only": "Coaching Sessions Only"
         }
       }
     },
@@ -40,6 +41,13 @@
           "name": "private_coaching_sessions",
           "type": "number",
           "fieldType": "number"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "coaching_sessions_only",
+          "type": "bool",
+          "fieldType": "booleancheckbox"
         }
       }
     ]

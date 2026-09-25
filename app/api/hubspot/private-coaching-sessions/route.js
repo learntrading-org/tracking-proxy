@@ -1,5 +1,6 @@
 // app/api/hubspot/private-coaching-sessions/route.js
 import { NextResponse } from "next/server";
+import { parsePrivateCoaching } from "./parse.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,20 +8,6 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Max-Age": "86400",
 };
-
-// "4 Private Coaching Sessions" → 4. Missing phrase → 0.
-const PRIVATE_COACHING_COUNT = /(\d+)\s+private\s+coaching\b/i;
-
-export function extractPrivateCoachingCount(value) {
-  if (value == null || value === "") return 0;
-
-  const text = typeof value === "string" ? value : JSON.stringify(value);
-  const match = text.match(PRIVATE_COACHING_COUNT);
-  if (!match) return 0;
-
-  const count = Number.parseInt(match[1], 10);
-  return Number.isInteger(count) ? count : 0;
-}
 
 function readProgramDeliverables(payload) {
   const fields = payload?.fields || payload?.inputFields || {};
@@ -43,16 +30,12 @@ export async function POST(request) {
   try {
     const payload = await request.json();
     const programDeliverables = readProgramDeliverables(payload);
-    const privateCoachingSessions = extractPrivateCoachingCount(programDeliverables);
+    const result = parsePrivateCoaching(programDeliverables);
 
-    console.log("Private coaching sessions count:", privateCoachingSessions);
+    console.log("Private coaching sessions:", result);
 
     return NextResponse.json(
-      {
-        outputFields: {
-          private_coaching_sessions: privateCoachingSessions,
-        },
-      },
+      { outputFields: result },
       {
         status: 200,
         headers: {
