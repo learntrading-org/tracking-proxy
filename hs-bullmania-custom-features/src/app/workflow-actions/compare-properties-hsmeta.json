@@ -1,0 +1,178 @@
+{
+  "uid": "compare_properties_action",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://tracking-proxy-mocha.vercel.app/api/hubspot/compare-properties",
+    "isPublished": true,
+    "supportedClients": [
+      {
+        "client": "WORKFLOWS"
+      }
+    ],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "value1",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "OBJECT_PROPERTY",
+          "STATIC_VALUE"
+        ],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "operator",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            {
+              "value": "equals",
+              "label": "Equals (==)"
+            },
+            {
+              "value": "not_equals",
+              "label": "Not Equals (!=)"
+            },
+            {
+              "value": "greater_than",
+              "label": "Greater Than (>)"
+            },
+            {
+              "value": "greater_than_or_equal",
+              "label": "Greater Than or Equal (>=)"
+            },
+            {
+              "value": "less_than",
+              "label": "Less Than (<)"
+            },
+            {
+              "value": "less_than_or_equal",
+              "label": "Less Than or Equal (<=)"
+            },
+            {
+              "value": "contains",
+              "label": "Contains"
+            },
+            {
+              "value": "not_contains",
+              "label": "Does Not Contain"
+            },
+            {
+              "value": "starts_with",
+              "label": "Starts With"
+            },
+            {
+              "value": "ends_with",
+              "label": "Ends With"
+            },
+            {
+              "value": "is_empty",
+              "label": "Is Empty / Not Set"
+            },
+            {
+              "value": "is_not_empty",
+              "label": "Is Not Empty / Set"
+            }
+          ]
+        },
+        "supportedValueTypes": [
+          "STATIC_VALUE"
+        ],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "value2",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
+          "OBJECT_PROPERTY",
+          "STATIC_VALUE"
+        ],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "case_sensitive",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            {
+              "value": "false",
+              "label": "No (Case Insensitive - Default)"
+            },
+            {
+              "value": "true",
+              "label": "Yes (Case Sensitive)"
+            }
+          ]
+        },
+        "supportedValueTypes": [
+          "STATIC_VALUE"
+        ],
+        "isRequired": false
+      }
+    ],
+    "labels": {
+      "en": {
+        "appDisplayName": "HS Bullmania Custom Features",
+        "actionName": "Compare Property Values",
+        "actionDescription": "Compares two property values or static inputs and returns a true/false boolean result.",
+        "actionCardContent": "Compare {{value1}} {{operator}} {{value2}}",
+        "inputFieldLabels": {
+          "value1": "Property 1 (or Value)",
+          "operator": "Comparison Operator",
+          "value2": "Property 2 (or Value)",
+          "case_sensitive": "Case Sensitive?"
+        },
+        "inputFieldDescriptions": {
+          "value1": "The first property or static value to compare.",
+          "operator": "The condition to test (equals, greater than, contains, etc.).",
+          "value2": "The second property or static value to compare against (leave empty for is_empty/is_not_empty).",
+          "case_sensitive": "Whether text comparisons should distinguish uppercase and lowercase letters."
+        },
+        "outputFieldLabels": {
+          "is_match": "Is Match (Boolean)",
+          "result": "Result (Boolean)",
+          "result_string": "Result as Text ('true' / 'false')"
+        }
+      }
+    },
+    "objectTypes": [
+      "CONTACT",
+      "COMPANY",
+      "DEAL",
+      "TICKET",
+      "PRODUCT",
+      "LINE_ITEM",
+      "QUOTE"
+    ],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "is_match",
+          "type": "bool",
+          "fieldType": "booleancheckbox"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "result",
+          "type": "bool",
+          "fieldType": "booleancheckbox"
+        }
+      },
+      {
+        "typeDefinition": {
+          "name": "result_string",
+          "type": "string",
+          "fieldType": "text"
+        }
+      }
+    ]
+  }
+}
