@@ -31,6 +31,15 @@ function parseDate(val) {
   return Number.isFinite(timestamp) ? timestamp : NaN;
 }
 
+function pickSide(propertyValue, staticValue) {
+  if (propertyValue !== undefined && propertyValue !== null && String(propertyValue).trim() !== "") {
+    return propertyValue;
+  }
+  if (staticValue !== undefined && staticValue !== null) return staticValue;
+  if (propertyValue !== undefined && propertyValue !== null) return propertyValue;
+  return "";
+}
+
 function evaluateComparison({ value1, value2, operator, case_sensitive }) {
   const isCaseSensitive = case_sensitive === "true" || case_sensitive === true;
 
@@ -125,12 +134,9 @@ export async function POST(request) {
     const payload = await request.json();
 
     const fields = payload.fields || {};
-    const {
-      value1,
-      value2,
-      operator = "equals",
-      case_sensitive = "false",
-    } = fields;
+    const { operator = "equals", case_sensitive = "false" } = fields;
+    const value1 = pickSide(fields.value1, fields.value1_static);
+    const value2 = pickSide(fields.value2, fields.value2_static);
 
     const isMatch = Boolean(
       evaluateComparison({

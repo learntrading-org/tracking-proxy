@@ -17,10 +17,20 @@
           "fieldType": "text"
         },
         "supportedValueTypes": [
-          "OBJECT_PROPERTY",
+          "OBJECT_PROPERTY"
+        ],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "value1_static",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
           "STATIC_VALUE"
         ],
-        "isRequired": true
+        "isRequired": false
       },
       {
         "typeDefinition": {
@@ -90,7 +100,17 @@
           "fieldType": "text"
         },
         "supportedValueTypes": [
-          "OBJECT_PROPERTY",
+          "OBJECT_PROPERTY"
+        ],
+        "isRequired": false
+      },
+      {
+        "typeDefinition": {
+          "name": "value2_static",
+          "type": "string",
+          "fieldType": "text"
+        },
+        "supportedValueTypes": [
           "STATIC_VALUE"
         ],
         "isRequired": false
@@ -122,17 +142,21 @@
         "appDisplayName": "HS Bullmania Custom Features",
         "actionName": "Compare Property Values",
         "actionDescription": "Compares two property values or static inputs and returns a true/false boolean result.",
-        "actionCardContent": "Compare {{value1}} {{operator}} {{value2}}",
+        "actionCardContent": "Compare {{value1}} {{value1_static}} {{operator}} {{value2}} {{value2_static}}",
         "inputFieldLabels": {
-          "value1": "Property 1 (or Value)",
+          "value1": "Property 1",
+          "value1_static": "Value 1",
           "operator": "Comparison Operator",
-          "value2": "Property 2 (or Value)",
+          "value2": "Property 2",
+          "value2_static": "Value 2",
           "case_sensitive": "Case Sensitive?"
         },
         "inputFieldDescriptions": {
-          "value1": "The first property or static value to compare.",
+          "value1": "A property on the enrolled record. Used when set; otherwise Value 1 is used.",
+          "value1_static": "A fixed value. Used only when Property 1 is empty.",
           "operator": "The condition to test (equals, greater than, contains, etc.).",
-          "value2": "The second property or static value to compare against (leave empty for is_empty/is_not_empty).",
+          "value2": "A property to compare against. Used when set; otherwise Value 2 is used.",
+          "value2_static": "A fixed value to compare against. Leave both Property 2 and Value 2 empty for is_empty or is_not_empty.",
           "case_sensitive": "Whether text comparisons should distinguish uppercase and lowercase letters."
         },
         "outputFieldLabels": {
