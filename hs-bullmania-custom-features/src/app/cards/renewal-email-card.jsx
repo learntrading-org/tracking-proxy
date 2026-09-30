@@ -101,13 +101,13 @@ const RenewalEmailCard = ({ context, actions }) => {
             "email",
             "firstname",
             "price",
-            "renewal_date",
+            "next_payment_date",
           ]);
           if (cancelled) return;
           if (properties.email) setEmail(String(properties.email));
           if (properties.firstname) setFirstName(String(properties.firstname));
           if (properties.price) setPrice(String(properties.price));
-          const parsedDate = toDateInput(properties.renewal_date);
+          const parsedDate = toDateInput(properties.next_payment_date);
           if (parsedDate) setRenewalDate(parsedDate);
         } catch (err) {
           console.warn("Could not fetch contact properties:", err);

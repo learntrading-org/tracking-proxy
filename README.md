@@ -584,7 +584,7 @@ Workflow requests are forced to `send` and template `crypto`.
 }
 ```
 
-`senderEmail` can be used instead of `adminId` (workflow). Must be one of `john@learntrading.com`, `jonathan@learntrading.com`, or `mauro@bullmania.com`. Defaults to `john@learntrading.com`. Prefill properties on the card: `email`, `firstname`, `price`, `renewal_date`.
+`senderEmail` can be used instead of `adminId` (workflow). Must be one of `john@learntrading.com`, `jonathan@learntrading.com`, or `mauro@bullmania.com`. Defaults to `john@learntrading.com`. Prefill properties on the card: `email`, `firstname`, `price`, `next_payment_date`.
 
 ---
 
