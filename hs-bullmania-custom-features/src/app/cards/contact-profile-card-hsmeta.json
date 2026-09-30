@@ -1,0 +1,11 @@
+{
+  "uid": "contact_profile_card",
+  "type": "card",
+  "config": {
+    "name": "Other customer data",
+    "description": "Kit tags and ThriveCart subscription for this contact.",
+    "entrypoint": "/app/cards/contact-profile-card.jsx",
+    "location": "crm.record.tab",
+    "objectTypes": ["CONTACT"]
+  }
+}

@@ -586,6 +586,19 @@ Workflow requests are forced to `send` and template `crypto`.
 
 `senderEmail` can be used instead of `adminId` (workflow). Must be one of `john@learntrading.com`, `jonathan@learntrading.com`, or `mauro@bullmania.com`. Defaults to `john@learntrading.com`. Prefill properties on the card: `email`, `firstname`, `price`, `next_payment_date`.
 
+#### `POST /api/hubspot/contact-profile`
+
+Contact tab **Other customer data**. Looks up the contact email in Kit and ThriveCart.
+
+| `action` | Result |
+|----------|--------|
+| `load` | Kit tags plus whether ThriveCart has a subscription with status `active` |
+| `add_tag` | Add Kit tag `tagId` (creates the subscriber if needed) |
+| `remove_tag` | Remove Kit tag `tagId` |
+| `create_student` | Enroll a ThriveCart Learn student in course `187845` and send the access email. The tab notes to do this only if the agreement was sent and signed through Google Docs |
+
+**Env:** `CONVERTKIT_API_SECRET`, `THRIVECART_API_KEY`
+
 ---
 
 #### `POST /api/hubspot/vsl-video-watch`
