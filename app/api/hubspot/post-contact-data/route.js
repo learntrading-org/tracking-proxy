@@ -196,7 +196,7 @@ export async function POST(request) {
             console.log("No contact ID found, skipping tagging.");
         }
 
-        // 4. Trigger Event
+        // 4. Trigger Event & ConvertKit Tag
         if (contactId) {
             const EVENT_NAME = "outbound_message_trigger";
             console.log(`Triggering event ${EVENT_NAME} for contact ${contactId}`);
@@ -218,6 +218,39 @@ export async function POST(request) {
                 // Not throwing here to ensure we return success for the contact/tag creation which were successful
             } else {
                 console.log("Event triggered successfully.");
+            }
+
+            // ConvertKit Tag 24184978 when outbound trigger is added
+            const CONVERTKIT_OUTBOUND_TAG_ID = "24184978";
+            const convertkitSecret = process.env.CONVERTKIT_API_SECRET;
+            if (convertkitSecret) {
+                try {
+                    console.log(`Applying ConvertKit tag ${CONVERTKIT_OUTBOUND_TAG_ID} to ${email}`);
+                    const ckRes = await fetch(
+                        `https://api.convertkit.com/v3/tags/${CONVERTKIT_OUTBOUND_TAG_ID}/subscribe`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json; charset=utf-8",
+                            },
+                            body: JSON.stringify({
+                                api_secret: convertkitSecret,
+                                email: email,
+                            }),
+                        }
+                    );
+
+                    if (!ckRes.ok) {
+                        const ckErrText = await ckRes.text();
+                        console.error(`ConvertKit Tag Failed [${CONVERTKIT_OUTBOUND_TAG_ID}]: ${ckRes.status} ${ckErrText}`);
+                    } else {
+                        console.log(`ConvertKit Tag [${CONVERTKIT_OUTBOUND_TAG_ID}] applied successfully to ${email}`);
+                    }
+                } catch (ckErr) {
+                    console.error("Error applying ConvertKit tag:", ckErr);
+                }
+            } else {
+                console.warn("Missing CONVERTKIT_API_SECRET, skipping ConvertKit tagging.");
             }
         }
 

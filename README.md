@@ -420,15 +420,16 @@ Require email (else 400)
 │     phoneSaved === true  → tag 13041517  (WhatsApp Connect)
 │     phoneSaved === false → tag 13041640  (Lead Email)
 │
-└─ Always (if contactId): fire event "outbound_message_trigger"
-     Event failure is logged but does not fail the request
+└─ Always (if contactId): 
+     ├─ fire event "outbound_message_trigger" (Event failure is logged but does not fail the request)
+     └─ apply ConvertKit tag 24184978 (if CONVERTKIT_API_SECRET is set)
 ```
 
 | Condition | Tag / action |
 |-----------|--------------|
 | Phone saved on contact | `13041517` WhatsApp Connect |
 | Phone missing / rejected | `13041640` Lead Email |
-| Contact created or found | Event `outbound_message_trigger` |
+| Contact created or found | Event `outbound_message_trigger` + ConvertKit tag `24184978` |
 
 Phone formatting: strip non-digits except `+`; convert `00…` prefix to `+…`; require length ≥ 7.
 
@@ -1044,7 +1045,7 @@ Payment events
 Lead captured (HubSpot workflow)
   → /api/hubspot/post-contact-data
       IF phone saved → WhatsApp tag ELSE Lead Email tag
-      ALWAYS fire outbound_message_trigger
+      ALWAYS fire outbound_message_trigger + ConvertKit tag 24184978
 
 No-show / deal lost (HubSpot)
   → /api/hubspot/tag-no-show | tag-deal-lost
