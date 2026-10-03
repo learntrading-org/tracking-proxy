@@ -39,8 +39,7 @@ const PRESETS = {
     "Technical Analysis Reports",
     "Private Live Streams",
     "BullMania AI",
-    "Private Market Analysis Videos",
-    "NO COACHING"
+    "Private Market Analysis Videos"
   ], null, 2),
   custom_only: JSON.stringify([
     "BullMania Trading Courses",
